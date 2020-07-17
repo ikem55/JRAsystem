@@ -1,0 +1,9 @@
+lab_notebook/
+test/
+venv/
+.idea/
+__pycache__/
+my_config.py
+JRAsystem.srctrlbm
+JRAsystem.srctrldb
+JRAsystem.srctrlprj
