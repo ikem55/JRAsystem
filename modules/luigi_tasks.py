@@ -96,8 +96,8 @@ class Create_learning_model(luigi.Task):
 
 
     def output(self):
-        # 学習は何度も繰り返せるようにMockのoutputを返す
-        return MockTarget("output")
+        # 処理済みフラグファイルを作成する
+        return luigi.LocalTarget(format=luigi.format.Nop, path=self.intermediate_folder + __class__.__name__)
 
 
 class Sub_get_exp_data(luigi.Task):
