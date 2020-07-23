@@ -48,8 +48,10 @@ class SkProc(object):
         self.dict_path = mc.return_base_path(test_flag)
         self.dict_folder = self.dict_path + 'dict/' + version_str + '/'
         self.model_folder = self.dict_path + 'model/' + version_str + '/'
+        self.pred_folder =self.dict_path + 'pred/' + version_str + '/'
         mu.create_folder(self.dict_folder)
         mu.create_folder(self.model_folder)
+        mu.create_folder(self.pred_folder)
 
     def _set_index_list(self, model_name):
         if model_name == "race":
@@ -509,6 +511,15 @@ class SkProc(object):
         else:
             import_df = pred_df
         return import_df
+
+    def import_data(self, import_df):
+        date_list = sorted(import_df["target_date"].drop_duplicates().tolist())
+        for date in date_list:
+            target_df = import_df.query(f"target_date == {date}")
+            if len(target_df["RACE_KEY"].drop_duplicates().tolist()) <= 9:
+                print("数が少ないのでskip")
+            else:
+                target_df.to_pickle(self.pred_folder + self.version_str + "_" + date + ".pkl")
 
     def _set_predict_target_encoding(self, df):
         """ 渡されたdataframeに対してTargetEncodeを行いエンコードした値をセットしたdataframeを返す
