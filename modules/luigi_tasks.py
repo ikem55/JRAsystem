@@ -239,7 +239,6 @@ class Create_target_file(luigi.Task):
             to.create_raceuma_score_file()
             to.create_main_mark_file()
             to.create_raceuma_mark_file()
-            to.create_result_raceuma_mark_file()
             to.create_result_race_comment_file()
             to.create_result_raceuma_comment_file()
             to.create_target_mark_df()
