@@ -460,3 +460,195 @@ def check_df_value(df, method_name):
     for col in check_columns:
         print(col)
         print(df[col].unique())
+
+def convert_jrdb_id(jrdb_race_key, nengappi):
+    """ JRDBのRACE_KEYからTarget用のRaceIDに変換する """
+    ba_code = jrdb_race_key[0:2]
+    kai = jrdb_race_key[4:5]
+    nichi = jrdb_race_key[5:6]
+    raceno = jrdb_race_key[6:8]
+    return nengappi + ba_code + convert_kaiji(kai) + convert_kaiji(nichi) + raceno
+
+def convert_kaiji(kai):
+    if kai == 'a': return '10'
+    if kai == 'b': return '11'
+    if kai == 'c': return '12'
+    if kai == 'd': return '13'
+    if kai == 'e': return '14'
+    if kai == 'f': return '15'
+    else: return '0' + kai
+
+def convert_are_flag(are1, are2, are3):
+    are1 = int(are1) if are1 == are1 else 0
+    are2 = int(are2) if are2 == are2 else 0
+    are3 = int(are3) if are3 == are3 else 0
+    text_are = str(are1) + str(are2) + str(are3)
+    val_are = are1 + are2 + are3
+    return '0' + str(val_are) + str(val_are) + text_are
+
+def convert_target_file(jrdb_race_key):
+    """ JRDBのRaceKeyからtargetのレース、馬印２用のファイル名を生成する """
+    yearkai = jrdb_race_key[2:5]
+    ba_code = jrdb_race_key[0:2]
+    if ba_code == '01': ba = "札"
+    if ba_code == '02': ba = "函"
+    if ba_code == '03': ba = "福"
+    if ba_code == '04': ba = "新"
+    if ba_code == '05': ba = "東"
+    if ba_code == '06': ba = "中"
+    if ba_code == '07': ba = "名"
+    if ba_code == '08': ba = "京"
+    if ba_code == '09': ba = "阪"
+    if ba_code == '10': ba = "小"
+    return yearkai + ba
+
+
+
+def decode_rap_type(num):
+    if num == 0:
+        return "00一貫"
+    elif num == 1:
+        return "01L4加"
+    elif num == 2:
+        return "02L3加"
+    elif num ==3:
+        return "03L2加"
+    elif num == 4:
+        return "04L1加"
+    elif num == 5:
+        return "05L4失"
+    elif num == 6:
+        return "06L3失"
+    elif num == 7:
+        return "07L2失"
+    elif num == 8:
+        return "08L1失"
+    else:
+        return "09其他"
+
+def _decode_zengo_bias(num):
+    if num == 0:
+        return "00超前" #"超前有利"
+    elif num == 1:
+        return "01　前" #"前有利"
+    elif num == 4:
+        return "02超後" ##"超後有利"
+    elif num  == 3:
+        return "03　後" #"後有利"
+    else:
+        return "04なし" #"フラット"
+
+def _decode_uchisoto_bias(num):
+    if num == 0:
+        return "00超内" #"超内有利"
+    elif num == 1:
+        return "01　内" #"内有利"
+    elif num == 4:
+        return "02超外" #"超外有利"
+    elif num == 3:
+        return "03　外" #"外有利"
+    else:
+        return "04なし" #"フラット"
+
+def convert_bias(uc, zg):
+    if uc == "04なし" and zg == "04なし": return "08なし"
+    elif uc == "04なし": return zg
+    elif zg == "04なし": return uc
+    elif zg == "00超前":
+        if uc == "00超内": return "05CUCZ"
+        if uc == "02超外": return "05CSCZ"
+        if uc == "01　内": return "07内CZ"
+        if uc == "03　外": return "07外CZ"
+    elif zg == "02超後":
+        if uc == "00超内": return "05CUCG"
+        if uc == "02超外": return "05CSCG"
+        if uc == "01　内": return "07内CG"
+        if uc == "03　外": return "07外CG"
+    elif zg == "01　前":
+        if uc == "00超内": return "06CU前"
+        if uc == "02超外": return "06CS前"
+        if uc == "01　内": return "09内前"
+        if uc == "03　外": return "09外前"
+    elif zg == "03　後":
+        if uc == "00超内": return "06CU後"
+        if uc == "02超外": return "06CS後"
+        if uc == "01　内": return "09内後"
+        if uc == "03　外": return "09外後"
+    else:
+        return "08不明"
+
+
+def _decode_race_pace(val):
+    if val == 1: return "00／　"
+    elif val == 2: return "01／￣"
+    elif val == 3: return "02／＼"
+    elif val == 4: return "03＿／"
+    elif val == 5: return "04ーー"
+    elif val == 6: return "05￣＼"
+    elif val == 7: return "06＼／"
+    elif val == 8: return "07＼＿"
+    elif val == 9: return "08＼　"
+    else: return "09　　"
+
+
+def _encode_zengo_bias(num):
+    if num < -3:
+        return "0" #"超前有利"
+    elif num < -1.2:
+        return "1" #"前有利"
+    elif num > 3:
+        return "4" ##"超後有利"
+    elif num > 1.2:
+        return "3" #"後有利"
+    else:
+        return "2" #"フラット"
+
+def _calc_uchisoto_bias(num):
+    if num < -1.8:
+        return "0" #"超内有利"
+    elif num < -0.6:
+        return "1" #"内有利"
+    elif num > 1.8:
+        return "4" #"超外有利"
+    elif num > 0.6:
+        return "3" #"外有利"
+    else:
+        return "2" #"フラット"
+
+def _encode_race_pace(val):
+    if val == "11": return "1"
+    elif val == "12": return "2"
+    elif val == "13": return "3"
+    elif val == "21": return "4"
+    elif val == "22": return "5"
+    elif val == "23": return "6"
+    elif val == "31": return "7"
+    elif val == "32": return "8"
+    elif val == "33": return "9"
+    else: return "0"
+
+
+def convert_basho(cd):
+    dict = {'01': '札幌', '02': '函館', '03': '福島', '04': '新潟', '05': '東京', '06': '中山', '07': '中京', '08': '京都', '09': '阪神', '10': '小倉', '21': '旭川', '22': '札幌', '23': '門別', '24': '函館', '25': '盛岡', '26': '水沢', '27': '上山',
+            '28': '新潟', '29': '三条', '30': '足利', '31': '宇都', '32': '高崎', '33': '浦和', '34': '船橋', '35': '大井', '36': '川崎', '37': '金沢', '38': '笠松', '39': '名古', '40': '中京', '41': '園田', '42': '姫路', '43': '益田', '44': '福山',
+            '45': '高知', '46': '佐賀', '47': '荒尾', '48': '中津', '61': '英国', '62': '愛国', '63': '仏国', '64': '伊国', '65': '独国', '66': '米国', '67': '加国', '68': 'UAE ', '69': '豪州', '70': '新国', '71': '香港', '72': 'チリ', '73': '星国',
+            '74': '瑞国', '75': 'マカ', '76': '墺国', '0': '', '00': ''}
+    return dict.get(cd, '')
+
+def convert_shubetsu(cd):
+    dict = {'11': '２歳', '12': '３歳', '13': '３歳以上', '14': '４歳以上', '20': '', '99': '', '0': ''}
+    return dict.get(cd, '')
+
+def _convert_joken(joken):
+    if joken == 1: return "A1"
+    if joken == 2: return "A2"
+    if joken == 3: return "A3"
+    if joken == 99: return "OP"
+    if joken == 5: return "500万下"
+    if joken == 10: return "1000万下"
+    if joken == 16: return "1600万下"
+    else: return ""
+
+def convert_shida(cd):
+    dict = {'1': '芝', '2': 'ダート', '3': '障害', '0': ''}
+    return dict.get(cd, '')

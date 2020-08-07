@@ -27,7 +27,7 @@ if __name__ == "__main__":
         model_name = target["model_name"]
         version_str = target["version_str"]
         print("model_name:" + model_name , " version_str:" + version_str)
-        intermediate_folder = dict_path + 'intermediate/' + model_name + '_' + version_str + '/'
+        intermediate_folder = dict_path + 'intermediate/' + model_name + '/'
         print(intermediate_folder)
 
         skproc = SkProc(version_str, start_date, end_date, model_name, mock_flag, test_flag)

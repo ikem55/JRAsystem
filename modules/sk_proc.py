@@ -494,12 +494,12 @@ class SkProc(object):
 
     def _sub_create_pred_df(self, temp_df, y_pred):
         pred_df = temp_df[self.index_list].copy()
-        pred_df.loc[:, "target_date"] = temp_df["NENGAPPI"].apply(lambda x: x[0:4] + "/" + x[4:6] + "/" + x[6:8])
+        pred_df.loc[:, "target_date"] = temp_df["NENGAPPI"]#.apply(lambda x: x[0:4] + "/" + x[4:6] + "/" + x[6:8])
         if self.version_str == 'raptype': #目的変数が多値なので横に結合してからunstack
             y_pred = pd.DataFrame(y_pred)
-            pred_df = pd.concat([pred_df, y_pred], axis=1).set_index(["RACE_KEY", "NENGAPPI", "target_date"])
+            pred_df = pd.concat([pred_df, y_pred], axis=1).set_index(["RACE_KEY", "target_date"])#, "NENGAPPI"
             pred_df = pred_df.stack().reset_index()
-            pred_df.columns = ["RACE_KEY", "NENGAPPI", "target_date", "pred_type", "prob"]
+            pred_df.columns = ["RACE_KEY", "target_date", "pred_type", "prob"]#, "NENGAPPI"
         else:
             pred_df.loc[:, "prob"] = y_pred
             pred_df.loc[:, "pred"] = pred_df.apply(lambda x: 1 if x["prob"] >= 0.5 else 0, axis=1)
@@ -526,11 +526,13 @@ class SkProc(object):
     def import_data(self, import_df):
         date_list = sorted(import_df["target_date"].drop_duplicates().tolist())
         for date in date_list:
+            print(date)
             target_df = import_df.query(f"target_date == '{date}'")
             if len(target_df["RACE_KEY"].drop_duplicates().tolist()) <= 9:
                 print("数が少ないのでskip")
             else:
-                target_df.to_pickle(self.pred_folder + self.version_str + "_" + mu.convert_date_to_str(date) + ".pkl")
+                target_df.to_pickle(self.pred_folder + self.version_str + "_" + date + ".pkl")
+                #target_df.to_pickle(self.pred_folder + self.version_str + "_" + mu.convert_date_to_str(date) + ".pkl")
 
     def _set_predict_target_encoding(self, df):
         """ 渡されたdataframeに対してTargetEncodeを行いエンコードした値をセットしたdataframeを返す

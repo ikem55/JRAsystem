@@ -18,9 +18,7 @@ class Extract(object):
     """ mockデータを使うかの判断に使用するフラグ。Trueの場合はMockデータを使う """
     mock_path = '../mock_data/'
     """ mockファイルが格納されているフォルダのパス """
-    dict_path = mc.return_jrdb_path()
-    jrdb_folder_path = dict_path + 'jrdb_data/'
-    pred_folder_path = dict_path + 'pred/'
+    jrdb_folder_path = mc.return_jrdb_path() + 'jrdb_data/'
     race_df = pd.DataFrame()
     race_before_df = pd.DataFrame()
     raceuma_df = pd.DataFrame()
@@ -226,28 +224,9 @@ class Extract(object):
             self.haraimodoshi_df = self._get_type_df("HJC")
         return self.haraimodoshi_df
 
-    def get_pred_df(self, model_version, target):
-        """ 予測したtargetのデータを取得する """
-        target_filelist = self._get_file_list_for_pred(model_version, target)
-        df = pd.DataFrame()
-        for filename in target_filelist:
-            temp_df = pd.read_pickle(filename)
-            df = pd.concat([df, temp_df])
-        return df
-
-    def _get_file_list_for_pred(self, folder, type):
-        """ predで予測したファイルの対象リストを取得する"""
-        folder_path = self.pred_folder_path + folder + "/" + type + "*.pickle"
-        filelist = glob.glob(folder_path)
-        file_df = pd.DataFrame({"filename": filelist})
-        file_df.loc[:, "date"] = file_df["filename"].apply(lambda x: dt.datetime.strptime(x[-15:-7], '%Y%m%d'))
-        target_filelist = file_df[(file_df["date"] >= self.start_date) & (file_df["date"] <= self.end_date)][
-            "filename"].tolist()
-        return sorted(target_filelist)
-
     def _get_type_df(self, type):
         """ タイプで指定したデータを取得する """
-        print(f"--------{type}----------")
+        # print(f"--------{type}----------")
         target_filelist = self._get_file_list(type)
         df = pd.DataFrame()
         for filename in target_filelist:

@@ -25,95 +25,101 @@ class Simulation(object):
         ext = Extract(start_date, end_date, mock_flag)
         return ext
 
-    def simulation_tansho(self, cond1):
-        check_df = self._create_tansho_base_df(cond1)
+    def simulation_tansho(self, cond1, odds_cond):
+        kaime_df = self.create_tansho_base_df(cond1)
+        bet_df = kaime_df.query(odds_cond) if odds_cond != "" else kaime_df
+        result_df = self.ext.get_tansho_df(self.haraimodoshi_df)
+        check_df = pd.merge(bet_df, result_df, on=["RACE_KEY", "UMABAN"], how="left").fillna(0)
         cond_text = cond1
         sr = self._calc_summary(check_df, cond_text)
         return sr
 
-    def _create_tansho_base_df(self, cond1):
+    def create_tansho_base_df(self, cond1):
         df1 = self.raceuma_df.query(cond1)[["RACE_KEY", "UMABAN"]]
-        result_tansho_df = self.ext.get_tansho_df(self.haraimodoshi_df)
         odds_df = self.ext.get_odds_df("単勝")
         kaime_df = pd.merge(df1, odds_df, on=["RACE_KEY", "UMABAN"])
-        check_df = pd.merge(kaime_df, result_tansho_df, on=["RACE_KEY", "UMABAN"], how="left").fillna(0)
-        return check_df
+        return kaime_df
 
-    def simulation_fukusho(self, cond1):
-        check_df = self._create_fukusho_base_df(cond1)
+    def simulation_fukusho(self, cond1, odds_cond):
+        kaime_df = self.create_fukusho_base_df(cond1)
+        bet_df = kaime_df.query(odds_cond) if odds_cond != "" else kaime_df
+        result_df = self.ext.get_fukusho_df(self.haraimodoshi_df)
+        check_df = pd.merge(bet_df, result_df, on=["RACE_KEY", "UMABAN"], how="left").fillna(0)
         cond_text = cond1
         sr = self._calc_summary(check_df, cond_text)
         return sr
 
-    def _create_fukusho_base_df(self, cond1):
+    def create_fukusho_base_df(self, cond1):
         df1 = self.raceuma_df.query(cond1)[["RACE_KEY", "UMABAN"]]
-        result_tansho_df = self.ext.get_fukusho_df(self.haraimodoshi_df)
         odds_df = self.ext.get_odds_df("複勝")
         kaime_df = pd.merge(df1, odds_df, on=["RACE_KEY", "UMABAN"])
-        check_df = pd.merge(kaime_df, result_tansho_df, on=["RACE_KEY", "UMABAN"], how="left").fillna(0)
-        return check_df
+        return kaime_df
 
-    def simulation_umaren(self, cond1, cond2):
-        check_df = self._create_umaren_base_df(cond1, cond2)
+    def simulation_umaren(self, cond1, cond2, odds_cond):
+        kaime_df = self.create_umaren_base_df(cond1, cond2)
+        bet_df = kaime_df.query(odds_cond) if odds_cond != "" else kaime_df
+        result_df = self.ext.get_umaren_df(self.haraimodoshi_df)
+        check_df = self._check_result_kaime(bet_df, result_df)
         cond_text = "馬1." + cond1 + " AND 馬2." + cond2
         sr = self._calc_summary(check_df, cond_text)
         return sr
 
-    def _create_umaren_base_df(self, cond1, cond2):
+    def create_umaren_base_df(self, cond1, cond2):
         df1 = self.raceuma_df.query(cond1)[["RACE_KEY", "UMABAN"]]
         df2 = self.raceuma_df.query(cond2)[["RACE_KEY", "UMABAN"]]
-        result_df = self.ext.get_umaren_df(self.haraimodoshi_df)
         odds_df = self.ext.get_odds_df("馬連")
         kaime_df = self._get_umaren_kaime(df1, df2, odds_df)
-        check_df = self._check_result_kaime(kaime_df, result_df)
-        return check_df
+        return kaime_df
 
-    def simulation_wide(self, cond1, cond2):
-        check_df = self._create_wide_base_df(cond1, cond2)
-        cond_text = "馬1." + cond1 + " AND 馬2." + cond2
-        sr = self._calc_summary(check_df, cond_text)
-        return sr
-
-    def _create_wide_base_df(self, cond1, cond2):
+    def simulation_wide(self, cond1, cond2, odds_cond):
+        kaime_df = self.create_wide_base_df(cond1, cond2)
+        bet_df = kaime_df.query(odds_cond) if odds_cond != "" else kaime_df
         result_df = self.ext.get_wide_df(self.haraimodoshi_df)
-        odds_df = self.ext.get_odds_df("ワイド")
-        df1 = self.raceuma_df.query(cond1)[["RACE_KEY", "UMABAN"]]
-        df2 = self.raceuma_df.query(cond2)[["RACE_KEY", "UMABAN"]]
-        kaime_df = self._get_2tou_kaime(df1, df2, odds_df)
-        check_df = self._check_result_kaime(kaime_df, result_df)
-        return check_df
-
-    def simulation_umatan(self, cond1, cond2):
-        check_df = self._create_umatan_base_df(cond1, cond2)
+        check_df = self._check_result_kaime(bet_df, result_df)
         cond_text = "馬1." + cond1 + " AND 馬2." + cond2
         sr = self._calc_summary(check_df, cond_text)
         return sr
 
-    def _create_umatan_base_df(self, cond1, cond2):
+    def create_wide_base_df(self, cond1, cond2):
         df1 = self.raceuma_df.query(cond1)[["RACE_KEY", "UMABAN"]]
         df2 = self.raceuma_df.query(cond2)[["RACE_KEY", "UMABAN"]]
+        odds_df = self.ext.get_odds_df("ワイド")
+        kaime_df = self._get_2tou_kaime(df1, df2, odds_df)
+        return kaime_df
+
+    def simulation_umatan(self, cond1, cond2, odds_cond):
+        kaime_df = self.create_umatan_base_df(cond1, cond2)
+        bet_df = kaime_df.query(odds_cond) if odds_cond != "" else kaime_df
         result_df = self.ext.get_umatan_df(self.haraimodoshi_df)
+        check_df = self._check_result_kaime(bet_df, result_df)
+        cond_text = "馬1." + cond1 + " AND 馬2." + cond2
+        sr = self._calc_summary(check_df, cond_text)
+        return sr
+
+    def create_umatan_base_df(self, cond1, cond2):
+        df1 = self.raceuma_df.query(cond1)[["RACE_KEY", "UMABAN"]]
+        df2 = self.raceuma_df.query(cond2)[["RACE_KEY", "UMABAN"]]
         odds_df = self.ext.get_odds_df("馬単")
         kaime_df = self._get_2tou_kaime(df1, df2, odds_df, ren=False)
-        check_df = self._check_result_kaime(kaime_df, result_df)
-        return check_df
+        return kaime_df
 
 
-    def simulation_sanrenpuku(self, cond1, cond2, cond3):
-        check_df = self._create_sanrenpuku_base_df(cond1, cond2, cond3)
+    def simulation_sanrenpuku(self, cond1, cond2, cond3, odds_cond):
+        kaime_df = self.create_sanrenpuku_base_df(cond1, cond2, cond3)
+        bet_df = kaime_df.query(odds_cond) if odds_cond != "" else kaime_df
+        result_df = self.ext.get_sanrenpuku_df(self.haraimodoshi_df)
+        check_df = self._check_result_kaime(bet_df, result_df)
         cond_text = "馬1." + cond1 + " AND 馬2." + cond2 + " AND 馬3." + cond3
         sr = self._calc_summary(check_df, cond_text)
         return sr
 
-    def _create_sanrenpuku_base_df(self, cond1, cond2, cond3):
+    def create_sanrenpuku_base_df(self, cond1, cond2, cond3):
         df1 = self.raceuma_df.query(cond1)[["RACE_KEY", "UMABAN"]]
         df2 = self.raceuma_df.query(cond2)[["RACE_KEY", "UMABAN"]]
         df3 = self.raceuma_df.query(cond3)[["RACE_KEY", "UMABAN"]]
-        result_df = self.ext.get_sanrenpuku_df(self.haraimodoshi_df)
         odds_df = self.ext.get_odds_df("三連複")
         kaime_df = self._get_3tou_kaime(df1, df2, df3, odds_df)
-        check_df = self._check_result_kaime(kaime_df, result_df)
-        return check_df
+        return kaime_df
 
 
     def _get_umaren_kaime(self, df1, df2, odds_df, ren=True):
@@ -121,12 +127,9 @@ class Simulation(object):
         temp_df = pd.merge(df1, df2, on="RACE_KEY")
         temp_df.loc[:, "連番１"] = temp_df["UMABAN_x"] + temp_df["UMABAN_y"]
         temp_df.loc[:, "連番２"] = temp_df["UMABAN_y"] + temp_df["UMABAN_x"]
-        print(len(temp_df.index))
         temp_df = temp_df.query("UMABAN_x != UMABAN_y")
-        print(len(temp_df.index))
         if ren:
             temp_df = temp_df.drop_duplicates(subset=["RACE_KEY", "連番１", "連番２"])
-        print(len(temp_df.index))
         odds_df = odds_df.drop("target_date", axis=1).set_index(["RACE_KEY", "UMABAN"])
         odds_df.columns = ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12", "13", "14", "15", "16", "17", "18"]
         odds_df = odds_df.stack().reset_index()
@@ -145,9 +148,7 @@ class Simulation(object):
         temp_df = pd.merge(df1, df2, on="RACE_KEY")
         temp_df.loc[:, "連番１"] = temp_df["UMABAN_x"] + temp_df["UMABAN_y"]
         temp_df.loc[:, "連番２"] = temp_df["UMABAN_y"] + temp_df["UMABAN_x"]
-        print(len(temp_df.index))
         temp_df = temp_df.query("UMABAN_x != UMABAN_y")
-        print(len(temp_df.index))
         if ren:
             temp_df = temp_df.drop_duplicates(subset=["RACE_KEY", "連番１", "連番２"])
             temp_df.loc[:, "UMABAN_1"] = temp_df.apply(lambda x: x["UMABAN_x"] if x["UMABAN_x"] <= x["UMABAN_y"] else x["UMABAN_y"], axis=1)
@@ -155,7 +156,6 @@ class Simulation(object):
         else:
             temp_df.loc[:, "UMABAN_1"] = temp_df["UMABAN_x"]
             temp_df.loc[:, "UMABAN_2"] = temp_df["UMABAN_y"]
-        print(len(temp_df.index))
         odds_df.columns = ["RACE_KEY", "UMABAN_1", "UMABAN_2", "オッズ", "target_date"]
         base_df = pd.merge(temp_df, odds_df, on=["RACE_KEY", "UMABAN_1", "UMABAN_2"])
         base_df.loc[:, "UMABAN"] = base_df.apply(lambda x: [x["UMABAN_1"], x["UMABAN_2"]], axis=1)
@@ -190,7 +190,6 @@ class Simulation(object):
         kaime_df["UMABAN"] = kaime_df["UMABAN"].apply(lambda x: ', '.join(map(str, x)))
         result_df["UMABAN"] = result_df["UMABAN"].apply(lambda x: ', '.join(map(str, x)))
         merge_df = pd.merge(kaime_df, result_df, on=["RACE_KEY", "UMABAN"], how="left").fillna(0)
-        print(merge_df.sort_values("払戻", ascending=False).head(20))
         return merge_df
 
     def _calc_summary(self, df, cond_text):

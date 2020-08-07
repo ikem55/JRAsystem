@@ -1,5 +1,6 @@
 import luigi
 from luigi.mock import MockTarget
+from modules.download import JrdbDownload
 from modules.output import Output
 from modules.simulation import Simulation
 import modules.util as mu
@@ -22,15 +23,14 @@ class Sub_get_learning_data(luigi.Task):
     def run(self):
         # SkModelを読んで学習データを作成する。すべてのデータを作成後、競馬場毎のデータを作成する
         print("----" + __class__.__name__ + ": run")
-        slack = Output()
-        slack.post_slack_text(dt.now().strftime("%Y/%m/%d %H:%M:%S") + " start Sub_get_learning_data job:" + self.skproc.version_str)
+        Output.post_slack_text(dt.now().strftime("%Y/%m/%d %H:%M:%S") + " start Sub_get_learning_data job:" + self.skproc.version_str)
         with self.output().open("w") as target:
             print("------ learning_dfを作成")
             self.skproc.set_learning_df()
             print("------ 学習用データを保存")
             self.skproc.learning_df.to_pickle(self.intermediate_folder + '_learning.pkl')
 
-            slack.post_slack_text(
+            Output.post_slack_text(
                 dt.now().strftime("%Y/%m/%d %H:%M:%S") + " finish Sub_get_learning_data job:" + self.skproc.version_str)
             print(__class__.__name__ + " says: task finished".format(task=self.__class__.__name__))
 
@@ -51,20 +51,19 @@ class Sub_create_feature_select_data(luigi.Task):
     def run(self):
         # 特徴量作成処理を実施。learningの全データ分を取得してSkModel特徴作成処理を実行する
         print("---" + __class__.__name__ + ": run")
-        slack = Output()
-        slack.post_slack_text(dt.now().strftime("%Y/%m/%d %H:%M:%S") + " start Sub_create_feature_select_data job:" + self.skproc.version_str)
+        Output.post_slack_text(dt.now().strftime("%Y/%m/%d %H:%M:%S") + " start Sub_create_feature_select_data job:" + self.skproc.version_str)
         with self.output().open("w") as target:
             file_name = self.intermediate_folder + "_learning.pkl"
             with open(file_name, 'rb') as f:
                 learning_df = pickle.load(f)
                 self.skproc.create_featrue_select_data(learning_df)
-            slack.post_slack_text(dt.now().strftime(
+            Output.post_slack_text(dt.now().strftime(
                 "%Y/%m/%d %H:%M:%S") + " finish Sub_create_feature_select_data job:" + self.skproc.version_str)
             print(__class__.__name__ + " says: task finished".format(task=self.__class__.__name__))
 
     def output(self):
         # 処理済みフラグファイルを作成する
-        return luigi.LocalTarget(format=luigi.format.Nop, path=self.intermediate_folder + __class__.__name__)
+        return luigi.LocalTarget(format=luigi.format.Nop, path=self.intermediate_folder + self.skproc.version_str + '/' + __class__.__name__)
 
 
 
@@ -82,22 +81,45 @@ class Create_learning_model(luigi.Task):
     def run(self):
         # 目的変数、場コード毎に学習を実施し、学習モデルを作成して中間フォルダに格納する
         print("---" + __class__.__name__ + ": run")
-        slack = Output()
-        slack.post_slack_text(dt.now().strftime("%Y/%m/%d %H:%M:%S") + " start End_baoz_learning job:" + self.skproc.version_str)
+        Output.post_slack_text(dt.now().strftime("%Y/%m/%d %H:%M:%S") + " start End_baoz_learning job:" + self.skproc.version_str)
         with self.output().open("w") as target:
             file_name = self.intermediate_folder + "_learning.pkl"
             with open(file_name, 'rb') as f:
                 df = pickle.load(f)
                 # 学習を実施
                 self.skproc.proc_learning_sk_model(df)
-            slack.post_slack_text(dt.now().strftime("%Y/%m/%d %H:%M:%S") +
+            Output.post_slack_text(dt.now().strftime("%Y/%m/%d %H:%M:%S") +
                 " finish End_baoz_learning job:" + self.skproc.version_str)
             print(__class__.__name__ + " says: task finished".format(task=self.__class__.__name__))
 
 
     def output(self):
         # 処理済みフラグファイルを作成する
-        return luigi.LocalTarget(format=luigi.format.Nop, path=self.intermediate_folder + __class__.__name__)
+        return luigi.LocalTarget(format=luigi.format.Nop, path=self.intermediate_folder + self.skproc.version_str + '/' + __class__.__name__)
+
+class Sub_download_jrdb_file(luigi.Task):
+    task_namespace = 'base_predict'
+    end_date = luigi.Parameter()
+    intermediate_folder = luigi.Parameter()
+
+    def run(self):
+        """
+        渡されたexp_data_nameに基づいてSK_DATA_MODELから説明変数のデータを取得する処理を実施。pickelファイル形式でデータを保存
+        """
+        print("----" + __class__.__name__ + ": run")
+        Output.post_slack_text(dt.now().strftime("%Y/%m/%d %H:%M:%S") + " start download jrdb file")
+        with self.output().open("w") as target:
+            download = JrdbDownload()
+            download.procedure_download()
+            download.move_file()
+
+    def output(self):
+        """
+        :return: MockのOutputを返す
+        """
+        #        return MockTarget("output")
+        return luigi.LocalTarget(format=luigi.format.Nop, path=self.intermediate_folder + mu.convert_date_to_str(
+            self.end_date) + "_" + __class__.__name__)
 
 
 class Sub_get_exp_data(luigi.Task):
@@ -116,8 +138,7 @@ class Sub_get_exp_data(luigi.Task):
         渡されたexp_data_nameに基づいてSK_DATA_MODELから説明変数のデータを取得する処理を実施。pickelファイル形式でデータを保存
         """
         print("----" + __class__.__name__ + ": run")
-        slack = Output()
-        slack.post_slack_text(dt.now().strftime("%Y/%m/%d %H:%M:%S") + " start predict job:" + self.skproc.version_str)
+        Output.post_slack_text(dt.now().strftime("%Y/%m/%d %H:%M:%S") + " start predict job:" + self.skproc.version_str)
         with self.output().open("w") as target:
             print("------ モデル毎に予測データが違うので指定してデータ作成を実行")
             predict_df = self.skproc.create_predict_data()
@@ -130,7 +151,7 @@ class Sub_get_exp_data(luigi.Task):
         :return: MockのOutputを返す
         """
 #        return MockTarget("output")
-        return luigi.LocalTarget(format=luigi.format.Nop, path=self.intermediate_folder + mu.convert_date_to_str(self.end_date) + "_" + __class__.__name__ + "_" + self.skproc.model_name)
+        return luigi.LocalTarget(format=luigi.format.Nop, path=self.intermediate_folder +  mu.convert_date_to_str(self.end_date) + "_" + __class__.__name__)
 
 
 @requires(Sub_get_exp_data)
@@ -160,13 +181,12 @@ class Calc_predict_data(luigi.Task):
             import_df = self.skproc.create_import_data(pred_df)
             if self.export_mode:
                 print("export data")
-                import_df.to_pickle(self.intermediate_folder + 'export_data.pkl')
+                import_df.to_pickle(self.intermediate_folder + self.skproc.version_str + '/' + 'export_data.pkl')
                 analyze_df = self.skproc.eval_pred_data(import_df)
                 print(analyze_df)
             else:
                 self.skproc.import_data(import_df)
-            slack = Output()
-            slack.post_slack_text(dt.now().strftime("%Y/%m/%d %H:%M:%S") +
+            Output.post_slack_text(dt.now().strftime("%Y/%m/%d %H:%M:%S") +
                 " finish predict job:" + self.skproc.version_str)
             print(__class__.__name__ + " says: task finished".format(task=self.__class__.__name__))
 
@@ -175,9 +195,8 @@ class Calc_predict_data(luigi.Task):
         :return: MockのOutputを返す
         """
 #        return MockTarget("output")
-        return luigi.LocalTarget(format=luigi.format.Nop, path=self.intermediate_folder + mu.convert_date_to_str(self.end_date) + "_" + __class__.__name__ + "_" + self.skproc.model_name)
+        return luigi.LocalTarget(format=luigi.format.Nop, path=self.intermediate_folder + self.skproc.version_str + '/' + mu.convert_date_to_str(self.end_date) + "_" + __class__.__name__ )
 
-@requires(Calc_predict_data)
 class Simulate_predict_data(luigi.Task):
     """
     Calc_predict_dataで作成したpredictデータをもとにシミュレーションを行う。
@@ -198,3 +217,39 @@ class Simulate_predict_data(luigi.Task):
             cond2 = "target == 'ANA_FLAG' and predict_rank <= 5"
             umaren_sr = sim.simulation_umaren(cond1, cond2)
             print(umaren_sr)
+
+class Create_target_file(luigi.Task):
+    """
+    Calc_predict_dataで作成したpredictデータをもとにシミュレーションを行う。
+    """
+    task_namespace = 'base_predict'
+    start_date = luigi.Parameter()
+    end_date = luigi.Parameter()
+    term_start_date = luigi.Parameter()
+    term_end_date = luigi.Parameter()
+    test_flag = luigi.Parameter()
+    intermediate_folder = luigi.Parameter()
+
+    def run(self):
+        print("---" + __class__.__name__ + ": run")
+        with self.output().open("w") as target:
+            to = Output(self.start_date, self.end_date, self.term_start_date, self.term_end_date, self.test_flag)
+            to.set_pred_df()
+            to.set_result_df()
+            to.create_raceuma_score_file()
+            to.create_main_mark_file()
+            to.create_raceuma_mark_file()
+            to.create_result_raceuma_mark_file()
+            to.create_result_race_comment_file()
+            to.create_result_raceuma_comment_file()
+            to.create_target_mark_df()
+            to.create_vote_file()
+            to.create_pbi_file()
+            to.create_pbi_result_file()
+
+    def output(self):
+        """
+        :return: MockのOutputを返す
+        """
+#        return MockTarget("output")
+        return luigi.LocalTarget(format=luigi.format.Nop, path=self.intermediate_folder + mu.convert_date_to_str(self.end_date) + "_" + __class__.__name__)
