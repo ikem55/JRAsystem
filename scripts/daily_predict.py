@@ -19,9 +19,9 @@ if __name__ == "__main__":
         term_start_date = '20190101'
         term_end_date = '20190120'
     else:
-        start_date = (dt.now() + timedelta(days=-9)).strftime('%Y/%m/%d')
+        start_date = (dt.now() + timedelta(days=-90)).strftime('%Y/%m/%d')
         end_date = (dt.now() + timedelta(days=1)).strftime('%Y/%m/%d')
-        term_start_date = (dt.now() + timedelta(days=-90)).strftime('%Y%m%d')
+        term_start_date = (dt.now() + timedelta(days=-9)).strftime('%Y%m%d')
         term_end_date = (dt.now() + timedelta(days=1)).strftime('%Y%m%d')
     target_list = [{"version_str": "win", "model_name": "raceuma"},
                    {"version_str": "nigeuma", "model_name": "raceuma"},
