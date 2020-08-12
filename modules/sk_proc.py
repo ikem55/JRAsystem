@@ -68,6 +68,11 @@ class SkProc(object):
                 'JIKU_FLAG': {'objective': 'binary'},
                 'ANA_FLAG': {'objective': 'binary'},
             }
+        elif version_str == "win5":
+            self.obj_column_list = ['WIN_FLAG']
+            self.lgbm_params = {
+                'WIN_FLAG': {'objective': 'binary'},
+            }
         elif version_str == "haito":
             self.obj_column_list = ["UMAREN_ARE", "UMATAN_ARE", "SANRENPUKU_ARE"]
             self.lgbm_params = {

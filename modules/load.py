@@ -173,10 +173,10 @@ class Load(object):
         self.result_df = self._proc_result_df(result_race_df, result_raceuma_df, result_haraimodoshi_df)
 
     def _proc_result_df(self, result_race_df, result_raceuma_df, result_haraimodoshi_df):
-        result_race_df = result_race_df[["RACE_KEY", "NENGAPPI", "RAP_TYPE", "TRACK_BIAS_UCHISOTO", "TRACK_BIAS_ZENGO", "target_date"]].copy()
+        result_race_df = result_race_df[["RACE_KEY", "NENGAPPI", "RAP_TYPE", "TRACK_BIAS_UCHISOTO", "TRACK_BIAS_ZENGO", "WIN5フラグ", "target_date"]].copy()
         result_raceuma_df = result_raceuma_df[["RACE_KEY" ,"UMABAN", "着順", "複勝", "レース脚質", "レースペース流れ", "上がり指数結果順位", "テン指数結果順位"]].copy()
         umaren_df = result_haraimodoshi_df[["RACE_KEY", "馬連払戻１", "馬単払戻１", "３連複払戻１"]].copy()
         result_df = pd.merge(result_race_df, result_raceuma_df, on="RACE_KEY")
         result_df = pd.merge(result_df, umaren_df, on="RACE_KEY")
-        return result_df[["RACE_KEY", "UMABAN", "target_date", "NENGAPPI", "着順", "複勝", "馬連払戻１", "馬単払戻１", "３連複払戻１", "RAP_TYPE",
+        return result_df[["RACE_KEY", "UMABAN", "target_date", "NENGAPPI", "WIN5フラグ", "着順", "複勝", "馬連払戻１", "馬単払戻１", "３連複払戻１", "RAP_TYPE",
                           "TRACK_BIAS_UCHISOTO", "TRACK_BIAS_ZENGO", "レースペース流れ", "レース脚質", "上がり指数結果順位", "テン指数結果順位"]].copy()

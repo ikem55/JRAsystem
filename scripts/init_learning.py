@@ -17,6 +17,7 @@ if __name__ == "__main__":
         start_date = '2012/01/01'
         end_date = '2019/12/31'
     target_list = [{"version_str": "win", "model_name": "raceuma"},
+                   {"version_str": "win5", "model_name": "raceuma"},
                    {"version_str": "nigeuma", "model_name": "raceuma"},
                    {"version_str": "raptype", "model_name": "race"},
                    {"version_str": "haito", "model_name": "race"}]

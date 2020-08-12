@@ -284,6 +284,11 @@ class SkModel(object):
                 lambda x: 1 if x['着順'] in (1, 2, 3) and x['複勝'] >= 500 else 0, axis=1)
             result_df = result_df[["RACE_KEY", "UMABAN", "NENGAPPI", "WIN_FLAG", "JIKU_FLAG", "ANA_FLAG"]].copy()
             return result_df
+        elif version_str == 'win5':
+            result_df = result_df.query("WIN5フラグ in ('1','2','3','4','5')")
+            result_df['WIN_FLAG'] = result_df['着順'].apply(lambda x: 1 if x == 1 else 0)
+            result_df = result_df[["RACE_KEY", "UMABAN", "NENGAPPI", "WIN_FLAG"]].copy()
+            return result_df
         elif version_str == 'haito':
             result_df['UMAREN_ARE'] = result_df['馬連払戻１'].apply(lambda x: 0 if x < 3000 else 1)
             result_df['UMATAN_ARE'] = result_df['馬連払戻１'].apply(lambda x: 0 if x < 5000 else 1)
