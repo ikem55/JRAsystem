@@ -14,9 +14,9 @@ if __name__ == "__main__":
 
     if test_flag:
         start_date = '2020/01/01'
-        end_date = '2020/6/30'
+        end_date = '2020/01/11'
         term_start_date = '20200101'
-        term_end_date = '20200630'
+        term_end_date = '20200111'
     else:
         start_date = '2020/01/01'
         end_date = (dt.now() + timedelta(days=1)).strftime('%Y/%m/%d')
@@ -35,8 +35,9 @@ if __name__ == "__main__":
     dict_path = mc.return_base_path(test_flag)
 
     intermediate_folder = dict_path + 'intermediate/download_jrdb/'
-    luigi.build([Sub_download_jrdb_file(end_date=end_date, intermediate_folder=intermediate_folder)],
-                local_scheduler=True)
+    if not test_flag:
+        luigi.build([Sub_download_jrdb_file(end_date=end_date, intermediate_folder=intermediate_folder)],
+                    local_scheduler=True)
 
     for target in target_list:
         model_name = target["model_name"]
@@ -50,6 +51,7 @@ if __name__ == "__main__":
         luigi.build([Calc_predict_data(start_date=start_date, end_date=end_date, skproc=skproc,intermediate_folder=intermediate_folder, export_mode=export_mode)],
                     local_scheduler=True)
 
-    intermediate_folder = dict_path + 'intermediate/target_file/'
-    luigi.build([Create_target_file(start_date=start_date, end_date=end_date, term_start_date=term_start_date, term_end_date=term_end_date,
-                                    intermediate_folder=intermediate_folder, test_flag=test_flag)],local_scheduler=True)
+    if not test_flag:
+        intermediate_folder = dict_path + 'intermediate/target_file/'
+        luigi.build([Create_target_file(start_date=start_date, end_date=end_date, term_start_date=term_start_date, term_end_date=term_end_date,
+                                        intermediate_folder=intermediate_folder, test_flag=test_flag)],local_scheduler=True)

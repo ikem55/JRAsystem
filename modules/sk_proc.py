@@ -102,10 +102,16 @@ class SkProc(object):
 
     def set_learning_df(self):
         base_df = self._get_base_df()
-        result_df = self._get_result_df()
-        self.learning_df = pd.merge(base_df, result_df, on = self.index_list)
+        self.learning_df = base_df
+        #result_df = self._get_result_df()
+        #self.learning_df = pd.merge(base_df, result_df, on = self.index_list)
         self.categ_columns = self.skmodel.categ_columns
         self.target_enc_columns = self.skmodel.target_enc_columns
+
+    def merge_learning_df(self, learning_df):
+        result_df = self._get_result_df()
+        learning_df = pd.merge(learning_df, result_df, on = self.index_list)
+        return learning_df
 
     def create_predict_data(self):
         base_df = self._get_base_df()
@@ -118,6 +124,10 @@ class SkProc(object):
         base_df = self.skmodel.get_merge_df(self.ld.race_df, self.ld.raceuma_df, self.ld.horse_df, self.ld.prev_raceuma_df, self.ld.prev_feature_raceuma_df)
         base_df = self.skmodel.get_create_feature_raceuma_df(base_df)
         base_df = self.skmodel.get_droped_columns_raceuma_df(base_df)
+        # 特徴生成時にエンコードしたデータだと不都合が発生したのでエンコードを後で実施
+        base_df = self.ld.tf.encode_race_df(base_df)
+        base_df = self.ld.tf.encode_raceuma_df(base_df, self.dict_folder)
+        base_df = self.ld.tf.encode_horse_df(base_df, self.dict_folder)
         base_df = self.skmodel.get_label_encoding_raceuma_df(base_df, self.index_list)
         if self.model_name == 'race':
             base_df = self._get_base_df_for_race(base_df)
@@ -216,7 +226,8 @@ class SkProc(object):
         if self.version_str != 'raptype':
             target_encoding_columns = list(set(x_df.columns.tolist()) & set(self.target_enc_columns))
             for label in target_encoding_columns:
-                x_df.loc[:, "tr_" + label] = self._target_encoding(x_df[label], label, self.target_flag + '_tr_' + label, fit, y_df)
+                #x_df.loc[:, "tr_" + label] = self._target_encoding(x_df[label], label, self.target_flag + '_tr_' + label, fit, y_df)
+                x_df["tr_" + label] = self._target_encoding(x_df[label], label, self.target_flag + '_tr_' + label, fit, y_df)
         return x_df
 
     def _target_encoding(self, sr, label, dict_name, fit, y):
@@ -285,6 +296,9 @@ class SkProc(object):
                     self.X_test = self._change_obj_to_int(self.X_test)
                     imp_features = self._learning_base_race_lgb(this_model_name, target)
                     imp_features.append("weight")
+                    # x_dfにTRの値を持っていないのでTR前の値に切り替え
+                    imp_features = [w.replace('tr_','') for w in imp_features]
+                    imp_features = list(set(imp_features))
                     # 抽出した説明変数でもう一度Ｌｅａｒｎｉｎｇを実施
                     self.x_df = self.x_df[imp_features]
                     self.categ_columns = list(set(self.categ_columns) & set(imp_features))
@@ -479,6 +493,9 @@ class SkProc(object):
         print("======= this_model_name: " + this_model_name + " ==========")
         with open(self.model_folder + this_model_name + '_feat_columns.pickle', 'rb') as f:
             imp_features = pickle.load(f)
+        # x_dfにTRの値を持っていないのでTR前の値に切り替え
+        imp_features = [w.replace('tr_', '') for w in imp_features]
+        imp_features = list(set(imp_features))
         exp_df = df.drop(self.index_list, axis=1)
         exp_df = exp_df[imp_features]
         exp_df = self._set_predict_target_encoding(exp_df)

@@ -56,6 +56,7 @@ class Sub_create_feature_select_data(luigi.Task):
             file_name = self.intermediate_folder + "_learning.pkl"
             with open(file_name, 'rb') as f:
                 learning_df = pickle.load(f)
+                learning_df = self.skproc.merge_learning_df(learning_df)
                 self.skproc.create_featrue_select_data(learning_df)
             Output.post_slack_text(dt.now().strftime(
                 "%Y/%m/%d %H:%M:%S") + " finish Sub_create_feature_select_data job:" + self.skproc.version_str)
@@ -87,6 +88,7 @@ class Create_learning_model(luigi.Task):
             with open(file_name, 'rb') as f:
                 df = pickle.load(f)
                 # 学習を実施
+                df = self.skproc.merge_learning_df(df)
                 self.skproc.proc_learning_sk_model(df)
             Output.post_slack_text(dt.now().strftime("%Y/%m/%d %H:%M:%S") +
                 " finish End_baoz_learning job:" + self.skproc.version_str)

@@ -23,7 +23,6 @@ class Transform(object):
     ##################### race_df ###############################
     def encode_race_df(self, race_df):
         """  列をエンコードする処理（ラベルエンコーディング、onehotエンコーディング等）"""
-        race_df.loc[:, '場名'] = race_df['RACE_KEY'].str[:2]
         race_df.loc[:, '曜日'] = race_df['曜日'].apply(lambda x: self._convert_weekday(x))
         return race_df
 
@@ -39,6 +38,7 @@ class Transform(object):
         :param dataframe race_df:
         :return: dataframe
         """
+        race_df.loc[:, '場名'] = race_df['RACE_KEY'].str[:2]
         race_df.loc[:, '条件'] = race_df['条件'].apply(lambda x: self._convert_joken(x))
         race_df.loc[:, '月'] = race_df['NENGAPPI'].str[4:6].astype(int)
         race_df.loc[:, "非根幹"] = race_df["距離"].apply(lambda x: 0 if x % 400 == 0 else 1)
@@ -54,7 +54,7 @@ class Transform(object):
        'ダ馬場状態外', 'ダ馬場差', '連続何日目', '芝種類', '草丈', '転圧', '凍結防止剤', '中間降水量', '月',
        '非根幹', '距離グループ', "course_cluster"]].copy()
         race_df = race_df.astype({'距離': int, '芝ダ障害コード': int, '右左': int, '内外': int, '種別': int, '記号': int, '重量': int,
-                                  'コース': int, '曜日': int, '天候コード': int, '芝馬場状態コード': int, '芝馬場状態内': int, '芝馬場状態中': int,
+                                  'コース': int, '天候コード': int, '芝馬場状態コード': int, '芝馬場状態内': int, '芝馬場状態中': int, #'曜日': int,
                                   '芝馬場状態外': int, '直線馬場差最内': int, '直線馬場差内': int, '直線馬場差中': int, '直線馬場差外': int, '直線馬場差大外': int,
                                   'ダ馬場状態コード': int, 'ダ馬場状態内': int, 'ダ馬場状態中': int, 'ダ馬場状態外': int, '芝種類': int, '転圧': int,
                                   '凍結防止剤': int,'距離グループ': int})
@@ -77,12 +77,12 @@ class Transform(object):
         raceuma_df.loc[:, '激走タイプ'] = mu.label_encoding(raceuma_df['激走タイプ'], '激走タイプ', dict_folder).astype(str)
         raceuma_df.loc[:, '調教コースコード'] = mu.label_encoding(raceuma_df['調教コースコード'], '調教コースコード', dict_folder).astype(str)
         raceuma_df.loc[:, 'LS評価'] = raceuma_df['LS評価'].apply(lambda x: mu.convert_ls_hyouka(x))
-        hash_taikei_column = ["走法", "体型０１", "体型０２", "体型０３", "体型０４", "体型０５", "体型０６", "体型０７", "体型０８", "体型０９", "体型１０", "体型１１", "体型１２", "体型１３", "体型１４", "体型１５", "体型１６", "体型１７", "体型１８", "体型総合１", "体型総合２", "体型総合３"]
-        hash_taikei_dict_name = "raceuma_before_taikei"
-        raceuma_df = mu.hash_eoncoding(raceuma_df, hash_taikei_column, 3, hash_taikei_dict_name, dict_folder)
-        hash_tokki_column = ["馬特記１", "馬特記２", "馬特記３"]
-        hash_tokki_dict_name = "raceuma_before_tokki"
-        raceuma_df = mu.hash_eoncoding(raceuma_df, hash_tokki_column, 2, hash_tokki_dict_name, dict_folder)
+        #hash_taikei_column = ["走法", "体型０１", "体型０２", "体型０３", "体型０４", "体型０５", "体型０６", "体型０７", "体型０８", "体型０９", "体型１０", "体型１１", "体型１２", "体型１３", "体型１４", "体型１５", "体型１６", "体型１７", "体型１８", "体型総合１", "体型総合２", "体型総合３"]
+        #hash_taikei_dict_name = "raceuma_before_taikei"
+        #raceuma_df = mu.hash_eoncoding(raceuma_df, hash_taikei_column, 3, hash_taikei_dict_name, dict_folder)
+        #hash_tokki_column = ["馬特記１", "馬特記２", "馬特記３"]
+        #hash_tokki_dict_name = "raceuma_before_tokki"
+        #raceuma_df = mu.hash_eoncoding(raceuma_df, hash_tokki_column, 2, hash_tokki_dict_name, dict_folder)
 
 
         return raceuma_df
@@ -158,20 +158,20 @@ class Transform(object):
                                  '調教コースコード', '追切種類', '追い状態', '乗り役', '調教Ｆ', 'テンＦ', '中間Ｆ', '終いＦ', '併せ結果', '併せ追切種類', '併せ年齢', '併せクラス',
                                  '調教タイプ', '調教コース種別', '調教コース坂', '調教コースW', '調教コースダ', '調教コース芝', '調教コースプール', '調教コース障害', '調教コースポリ',
                                  '調教距離', '調教重点', '調教量評価', '仕上指数変化', '調教評価', '父馬産駒芝連対率', '父馬産駒ダ連対率',
-                                 '父馬産駒連対平均距離', '母父馬産駒芝連対率', '母父馬産駒ダ連対率', '母父馬産駒連対平均距離', 'raceuma_before_taikei_0', 'raceuma_before_taikei_1',
-                                 'raceuma_before_taikei_2', 'raceuma_before_tokki_0', 'raceuma_before_tokki_1', 'IDM', '騎手指数', '情報指数', '総合指数', '人気指数',
+                                 '父馬産駒連対平均距離', '母父馬産駒芝連対率', '母父馬産駒ダ連対率', '母父馬産駒連対平均距離', 'IDM', '騎手指数', '情報指数', '総合指数', '人気指数',
+                                 # 'raceuma_before_taikei_0', 'raceuma_before_taikei_1','raceuma_before_taikei_2', 'raceuma_before_tokki_0', 'raceuma_before_tokki_1',
                                  '調教指数', '厩舎指数', 'テン指数', 'ペース指数', '上がり指数', '位置指数', '万券指数', 'テンＦ指数', '中間Ｆ指数', '終いＦ指数', '追切指数',
                                  '仕上指数', '馬番グループ', '基準人気グループ', 'ＪＲＡ成績', '交流成績', '他成績', '芝ダ障害別成績', '芝ダ障害別距離成績', 'トラック距離成績',
                                  'ローテ成績', '回り成績', '騎手成績', '良成績', '稍成績', '重成績', 'Ｓペース成績', 'Ｍペース成績', 'Ｈペース成績', '季節成績', '枠成績',
                                  '騎手距離成績', '騎手トラック距離成績', '騎手調教師別成績', '騎手馬主別成績', '騎手ブリンカ成績', '調教師馬主別成績']].copy()
         raceuma_df = raceuma_df.astype({'脚質': int, '距離適性': int, '上昇度': int, '調教矢印コード': int,'厩舎評価コード': int, '激走指数': int,'蹄コード': int, '重適正コード': int,
-                                        'クラスコード': int, 'ブリンカー': int, '負担重量': int, '見習い区分': int, '調教師所属': int, '枠番': int, '総合印': int, 'ＩＤＭ印': int,
+                                        'クラスコード': int, 'ブリンカー': int, '負担重量': int, '見習い区分': int, '枠番': int, '総合印': int, 'ＩＤＭ印': int,
                                         '情報印': int, '騎手印': int, '厩舎印': int, '調教印': int, '激走印': int, '芝適性コード': int, 'ダ適性コード': int, '条件クラス': int,
                                         '道中内外': int, '後３Ｆ内外': int, 'ゴール内外': int, '展開記号': int, '距離適性２': int, '枠確定馬体重': int, '枠確定馬体重増減': int, '取消フラグ': int,
-                                        '性別コード': int, '馬主会コード': int, '馬記号コード': int, '輸送区分': int, '万券印': int, '降級フラグ': int, '激走タイプ': int, '休養理由分類コード': int,
+                                        '性別コード': int, '馬主会コード': int, '馬記号コード': int, '輸送区分': int, '万券印': int, '降級フラグ': int, '休養理由分類コード': int,
                                         '芝ダ障害フラグ': int, '距離フラグ': int, 'クラスフラグ': int, '転厩フラグ': int, '去勢フラグ': int, '乗替フラグ': int, '入厩何走目': int, '入厩何日前': int,
-                                        '放牧先ランク': int, 'CID': int, 'EM': int, '厩舎ＢＢ印': int, '騎手ＢＢ印': int, '調教曜日': int, '調教回数': int,
-                                        '調教コースコード': int, '追切種類': int, '追い状態': int, '乗り役': int, '併せ結果': int, '併せ追切種類': int, '併せ年齢': int,
+                                        'CID': int, 'EM': int, '厩舎ＢＢ印': int, '騎手ＢＢ印': int, '調教回数': int, #'調教曜日': int, '放牧先ランク': int, '調教師所属': int, '激走タイプ': int, '調教コースコード': int,
+                                        '追切種類': int, '追い状態': int, '乗り役': int, '併せ結果': int, '併せ追切種類': int, '併せ年齢': int,
                                         '調教タイプ': int, '調教コース種別': int, '調教距離': int, '調教重点': int, '仕上指数変化': int, '調教評価': int})
         return raceuma_df
 
@@ -200,7 +200,7 @@ class Transform(object):
         :return: dataframe
         """
         horse_df = horse_df[['血統登録番号', '毛色コード', '父馬名', '母父馬名', '生産者名', '産地名', '父系統コード', '母父系統コード', 'target_date']].copy()
-        horse_df = horse_df.astype({'毛色コード': int, '父馬名': int, '母父馬名': int, '生産者名': int, '産地名': int, '父系統コード': int, '母父系統コード': int})
+        horse_df = horse_df.astype({'毛色コード': int, '父系統コード': int, '母父系統コード': int})#'父馬名': int, '母父馬名': int, '生産者名': int, '産地名': int,
         return horse_df
 
 
@@ -354,10 +354,10 @@ class Transform(object):
         temp_raceuma_df.loc[:, "着順率"] = (temp_raceuma_df["着順"] / temp_raceuma_df["頭数"])
         temp_raceuma_df.loc[:, "追込率"] = (temp_raceuma_df["コーナー順位４"] - temp_raceuma_df["着順"]) / temp_raceuma_df["頭数"]
         temp_raceuma_df.loc[:, "平均タイム"] = temp_raceuma_df["タイム"] / temp_raceuma_df["距離"] * 200
-        temp_raceuma_df.loc[:, "コーナー順位１"] = (temp_raceuma_df["コーナー順位１"] / temp_raceuma_df["頭数"])
-        temp_raceuma_df.loc[:, "コーナー順位２"] = (temp_raceuma_df["コーナー順位２"] / temp_raceuma_df["頭数"])
-        temp_raceuma_df.loc[:, "コーナー順位３"] = (temp_raceuma_df["コーナー順位３"] / temp_raceuma_df["頭数"])
-        temp_raceuma_df.loc[:, "コーナー順位４"] = (temp_raceuma_df["コーナー順位４"] / temp_raceuma_df["頭数"])
+        temp_raceuma_df.loc[:, "コーナー順位１率"] = (temp_raceuma_df["コーナー順位１"] / temp_raceuma_df["頭数"])
+        temp_raceuma_df.loc[:, "コーナー順位２率"] = (temp_raceuma_df["コーナー順位２"] / temp_raceuma_df["頭数"])
+        temp_raceuma_df.loc[:, "コーナー順位３率"] = (temp_raceuma_df["コーナー順位３"] / temp_raceuma_df["頭数"])
+        temp_raceuma_df.loc[:, "コーナー順位４率"] = (temp_raceuma_df["コーナー順位４"] / temp_raceuma_df["頭数"])
         temp_raceuma_df.loc[:, "平坦コース"] = temp_raceuma_df["場コード"].apply(lambda x: 1 if x in ('01', '02', '03', '04', '08', '10') else 0)
         temp_raceuma_df.loc[:, "急坂コース"] = temp_raceuma_df["場コード"].apply(lambda x: 1 if x in ('06', '07', '09') else 0)
         temp_raceuma_df.loc[:, "好走"] = temp_raceuma_df["ru_cluster"].apply(lambda x: 1 if x in (1, 4, 7) else (-1 if x in (2, 3) else 0))
@@ -382,7 +382,7 @@ class Transform(object):
                                  '1(2)着タイム差', '前３Ｆタイム', '後３Ｆタイム', '確定複勝オッズ下', 'コーナー順位１', 'コーナー順位２', 'コーナー順位３', 'コーナー順位４', '前３Ｆ先頭差',
                                  '後３Ｆ先頭差', '騎手コード', '調教師コード', '馬体重増減', 'レース脚質', '４角コース取り', 'テン指数結果順位', '上がり指数結果順位', 'ペース指数結果順位',
                                  'IDM', '特記コード１', '特記コード２', '特記コード３', '特記コード４', '特記コード５', '特記コード６', 'ペースアップ位置', 'ラップ差４ハロン', 'ラップ差３ハロン',
-                                 'ラップ差２ハロン', 'ラップ差１ハロン', 'RAP_TYPE', '芝種類', '草丈', '転圧',
+                                 'ラップ差２ハロン', 'ラップ差１ハロン', 'RAP_TYPE', '芝種類', '草丈', '転圧','コーナー順位１率', 'コーナー順位２率', 'コーナー順位３率', 'コーナー順位４率',
                                  '凍結防止剤', 'ハロン数', '芝', '外', '重', '軽', 'TRACK_BIAS_ZENGO', 'TRACK_BIAS_UCHISOTO', '１ハロン平均_mean',
                                  'ＩＤＭ結果_mean', 'テン指数結果_mean', '上がり指数結果_mean', 'ペース指数結果_mean', '前３Ｆタイム_mean', '後３Ｆタイム_mean', 'コーナー順位１_mean',
                                  'コーナー順位２_mean', 'コーナー順位３_mean', 'コーナー順位４_mean', '前３Ｆ先頭差_mean', '後３Ｆ先頭差_mean', '追走力_mean', '追上力_mean', '後傾指数_mean',

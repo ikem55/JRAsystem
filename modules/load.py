@@ -55,7 +55,7 @@ class Load(object):
     def _proc_race_df(self, race_df):
         """ race_dfの前処理、encode -> normalize -> standardize -> feature_create -> drop_columnsの順で処理 """
         race_df = self.tf.cluster_course_df(race_df, self.dict_path) #参照フォルダの位置の問題がある(dict_path/dict_foloder)
-        race_df = self.tf.encode_race_df(race_df)
+        #race_df = self.tf.encode_race_df(race_df)
         race_df = self.tf.normalize_race_df(race_df)
         race_df = self.tf.standardize_race_df(race_df)
         race_df = self.tf.create_feature_race_df(race_df)
@@ -69,7 +69,7 @@ class Load(object):
         print("set_raceuma_df: raceuma_df", self.raceuma_df.shape)
 
     def _proc_raceuma_df(self, raceuma_df):
-        raceuma_df = self.tf.encode_raceuma_df(raceuma_df, self.dict_folder)
+        #raceuma_df = self.tf.encode_raceuma_df(raceuma_df, self.dict_folder)
         raceuma_df = self.tf.normalize_raceuma_df(raceuma_df)
         raceuma_df = self.tf.standardize_raceuma_df(raceuma_df)
         raceuma_df = self.tf.create_feature_raceuma_df(raceuma_df)
@@ -83,7 +83,7 @@ class Load(object):
         print("set_horse_df: horse_df", self.horse_df.shape)
 
     def _proc_horse_df(self, horse_df):
-        horse_df = self.tf.encode_horse_df(horse_df, self.dict_folder)
+        #horse_df = self.tf.encode_horse_df(horse_df, self.dict_folder)
         horse_df = self.tf.normalize_horse_df(horse_df)
         horse_df = self.tf.standardize_horse_df(horse_df)
         horse_df = self.tf.create_feature_horse_df(horse_df)
