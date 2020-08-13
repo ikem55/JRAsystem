@@ -69,9 +69,9 @@ class SkProc(object):
                 'ANA_FLAG': {'objective': 'binary'},
             }
         elif version_str == "win5":
-            self.obj_column_list = ['WIN_FLAG']
+            self.obj_column_list = ['WIN5_FLAG']
             self.lgbm_params = {
-                'WIN_FLAG': {'objective': 'binary'},
+                'WIN5_FLAG': {'objective': 'binary'},
             }
         elif version_str == "haito":
             self.obj_column_list = ["UMAREN_ARE", "UMATAN_ARE", "SANRENPUKU_ARE"]
@@ -299,6 +299,7 @@ class SkProc(object):
                     self._load_learning_target_encoding()
                     self.X_train = self._change_obj_to_int(self.X_train)
                     self.X_test = self._change_obj_to_int(self.X_test)
+                    self.categ_columns = list(set(self.categ_columns) & set(self.X_train.columns.tolist()))
                     imp_features = self._learning_base_race_lgb(this_model_name, target)
                     imp_features.append("weight")
                     # x_dfにTRの値を持っていないのでTR前の値に切り替え

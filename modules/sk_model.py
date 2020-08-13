@@ -80,11 +80,12 @@ class SkModel(object):
 #            self.target_enc_columns = []
 #            """
             self.target_enc_columns = ['脚質', '距離適性', '上昇度', '調教矢印コード', '厩舎評価コード', '蹄コード', '重適正コード', 'クラスコード', 'ブリンカー', '見習い区分', '総合印', 'ＩＤＭ印', '情報印',
-                                       '騎手印', '厩舎印', '調教印', '激走印', '展開記号', '性別コード', '馬主名', '馬主会コード', '馬記号コード', '輸送区分', '万券印', '激走タイプ', '休養理由分類コード',
+                                       '騎手印', '厩舎印', '調教印', '激走印', '展開記号', '性別コード', '馬主会コード', '馬記号コード', '輸送区分', '万券印', '激走タイプ', '休養理由分類コード',
                                        '芝ダ障害フラグ', '距離フラグ', 'クラスフラグ', '転厩フラグ', '去勢フラグ', '乗替フラグ', '放牧先', '放牧先ランク', '厩舎ランク', 'EM', '厩舎ＢＢ印', '騎手ＢＢ印',
                                        '追切種類', '追い状態', '乗り役', '併せ結果', '併せ追切種類', '調教タイプ', '調教コース種別', '調教量評価', '仕上指数変化', '調教評価',
                                        #'raceuma_before_taikei_0','raceuma_before_taikei_1', 'raceuma_before_taikei_2', 'raceuma_before_tokki_0', 'raceuma_before_tokki_1',
-                                       '基準人気グループ', '父馬名', '母父馬名', '生産者名',
+                                       #'馬主名', '生産者名',
+                                       '基準人気グループ', '父馬名', '母父馬名',
                                        '産地名', '父系統コード', '母父系統コード', '継続騎乗', '同根幹', '同距離グループ', '前走凡走', '前走激走', '前走逃げそびれ', '前走加速ラップ', '平坦', '急坂', '内枠', '外枠',
                                        '枠', '中山', '東京', '上がり遅', '上がり速', 'ダート道悪', '突然バテた馬の距離短縮', '短距離からの延長', '中距離からの延長', '前崩れレースで先行惜敗', '前残りレースで差し損ね',
                                        '上がり幅小さいレースで差し損ね', 'ダート短距離血統１', '内枠短縮', '外枠短縮', '内枠延長', '外枠延長', '延長得意父', '延長得意母父', '砂被り苦手父', '砂被り苦手母父', '逆ショッカー',
@@ -266,7 +267,7 @@ class SkModel(object):
 
     def get_droped_columns_race_df(self, base_df):
         print(base_df.iloc[0])
-        #base_df = base_df.drop("KAISAI_KEY", axis=1)
+        base_df = base_df.drop("KAISAI_KEY", axis=1)
         return base_df
 
     def get_label_encoding_race_df(self, base_df, index_list):
@@ -288,8 +289,8 @@ class SkModel(object):
             return result_df
         elif version_str == 'win5':
             result_df = result_df.query("WIN5フラグ in ('1','2','3','4','5')")
-            result_df['WIN_FLAG'] = result_df['着順'].apply(lambda x: 1 if x == 1 else 0)
-            result_df = result_df[["RACE_KEY", "UMABAN", "NENGAPPI", "WIN_FLAG"]].copy()
+            result_df['WIN5_FLAG'] = result_df['着順'].apply(lambda x: 1 if x == 1 else 0)
+            result_df = result_df[["RACE_KEY", "UMABAN", "NENGAPPI", "WIN5_FLAG"]].copy()
             return result_df
         elif version_str == 'haito':
             result_df['UMAREN_ARE'] = result_df['馬連払戻１'].apply(lambda x: 0 if x < 3000 else 1)
