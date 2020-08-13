@@ -11,16 +11,19 @@ if __name__ == "__main__":
     print("tst_flag:" + args[1])
 
     if test_flag:
-        start_date = '2019/01/30'
-        end_date = '2019/02/10'
+        start_date = '2018/01/01'
+        end_date = '2019/12/31'
+        #start_date = '2019/01/30'
+        #end_date = '2019/02/10'
     else:
         start_date = '2012/01/01'
         end_date = '2019/12/31'
     target_list = [{"version_str": "win", "model_name": "raceuma"},
                    {"version_str": "win5", "model_name": "raceuma"},
-                   {"version_str": "nigeuma", "model_name": "raceuma"},
-                   {"version_str": "raptype", "model_name": "race"},
-                   {"version_str": "haito", "model_name": "race"}]
+#                   {"version_str": "nigeuma", "model_name": "raceuma"},
+#                   {"version_str": "raptype", "model_name": "race"},
+#                   {"version_str": "haito", "model_name": "race"}
+                   ]
     mock_flag = False
     dict_path = mc.return_base_path(test_flag)
 

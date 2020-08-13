@@ -29,16 +29,17 @@ if __name__ == "__main__":
     target_list = [{"version_str": "win", "model_name": "raceuma"},
                    {"version_str": "win5", "model_name": "raceuma"},
                    {"version_str": "nigeuma", "model_name": "raceuma"},
-                   {"version_str": "raptype", "model_name": "race"},
-                   {"version_str": "haito", "model_name": "race"}]
+#                   {"version_str": "raptype", "model_name": "race"},
+#                   {"version_str": "haito", "model_name": "race"}
+                   ]
     mock_flag = False
     export_mode = False
     dict_path = mc.return_base_path(test_flag)
 
     intermediate_folder = dict_path + 'intermediate/download_jrdb/'
-    if not test_flag:
-        luigi.build([Sub_download_jrdb_file(end_date=end_date, intermediate_folder=intermediate_folder)],
-                    local_scheduler=True)
+    #if not test_flag:
+    #    luigi.build([Sub_download_jrdb_file(end_date=end_date, intermediate_folder=intermediate_folder)],
+    #                local_scheduler=True)
 
     for target in target_list:
         model_name = target["model_name"]

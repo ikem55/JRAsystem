@@ -140,6 +140,12 @@ class Output(object):
         self.raceuma_result_df = raceuma_result_df
 
     def set_pred_df(self):
+        win5_df = self.get_pred_df("win5", "WIN_FLAG")
+        win5_df.loc[:, "RACEUMA_ID"] = win5_df.apply(
+            lambda x: mu.convert_jrdb_id(x["RACE_KEY"], x["target_date"]) + x["UMABAN"], axis=1)
+        win5_df.loc[:, "predict_std"] = round(win5_df["predict_std"], 2)
+        win5_df.loc[:, "predict_rank"] = win5_df["predict_rank"].astype(int)
+
         win_df = self.get_pred_df("win", "WIN_FLAG")
         win_df.loc[:, "RACEUMA_ID"] = win_df.apply(
             lambda x: mu.convert_jrdb_id(x["RACE_KEY"], x["target_date"]) + x["UMABAN"], axis=1)
@@ -183,6 +189,7 @@ class Output(object):
             lambda x: mu.convert_jrdb_id(x["RACE_KEY"], x["target_date"]) + x["UMABAN"], axis=1)
         ten_df.loc[:, "predict_std"] = round(ten_df["predict_std"], 2)
         ten_df.loc[:, "predict_rank"] = ten_df["predict_rank"].astype(int)
+        self.win5_df = win5_df
         self.win_df = win_df
         self.jiku_df = jiku_df
         self.ana_df = ana_df
@@ -209,6 +216,11 @@ class Output(object):
         for date in self.date_list:
             print(date)
             print(self.win_df.head())
+            win5_temp_df = self.win5_df.query(f"target_date == '{date}'")[
+                ["RACEUMA_ID", "prob", "predict_rank"]].sort_values("RACEUMA_ID")
+            win5_temp_df.loc[:, "prob"] = (win5_temp_df["prob"] * 100 ).astype("int")
+            win5_temp_df.to_csv(self.ext_score_path + "pred_win5/" + date + ".csv", header=False, index=False)
+
             win_temp_df = self.win_df.query(f"target_date == '{date}'")[
                 ["RACEUMA_ID", "prob", "predict_rank"]].sort_values("RACEUMA_ID")
             win_temp_df.loc[:, "prob"] = (win_temp_df["prob"] * 100 ).astype("int")
@@ -283,9 +295,9 @@ class Output(object):
 
 
     def create_raceuma_mark_file(self):
-        print("---- 順位マーク --------")
+        print("---- WIN5マーク --------")
         mark_path_2 = self.target_path + "UmaMark2/"
-        self._proc_create_um_mark_file(self.total_df, mark_path_2)
+        self._proc_create_um_mark_file(self.win5_df, mark_path_2)
         print("---- pointマーク --------")
         mark_path_3 = self.target_path + "UmaMark3/"
         self._proc_create_um_mark_file(self.point_df, mark_path_3)
@@ -667,6 +679,8 @@ class Output(object):
                                  "クラスフラグ", "転厩フラグ", "去勢フラグ", "乗替フラグ", "放牧先ランク", "厩舎ランク", "調教コースコード",
                                  "追切種類", "追い状態", "調教タイプ", "調教距離", "調教重点", "仕上指数", "調教量評価", "仕上指数変化", "target_date"]].copy()
         raceuma_df = pd.merge(raceuma_df, self.target_mark_df, on=["RACE_KEY", "UMABAN"])
+        win5_df = self.win5_df[["RACE_KEY", "UMABAN", "predict_rank"]].copy()
+        win5_df.columns = ["RACE_KEY", "UMABAN", "win5_rank"]
         win_df = self.win_df[["RACE_KEY", "UMABAN", "predict_rank"]].copy()
         win_df.columns = ["RACE_KEY", "UMABAN", "win_rank"]
         jiku_df = self.jiku_df[["RACE_KEY", "UMABAN", "predict_rank"]].copy()
@@ -683,6 +697,7 @@ class Output(object):
         total_df.columns = ["RACE_KEY", "UMABAN", "total_rank"]
         point_df = self.point_df[["RACE_KEY", "UMABAN", "predict_rank"]].copy()
         point_df.columns = ["RACE_KEY", "UMABAN", "point_rank"]
+        raceuma_df = pd.merge(raceuma_df, win5_df, on=["RACE_KEY", "UMABAN"], how='left')
         raceuma_df = pd.merge(raceuma_df, win_df, on=["RACE_KEY", "UMABAN"])
         raceuma_df = pd.merge(raceuma_df, jiku_df, on=["RACE_KEY", "UMABAN"])
         raceuma_df = pd.merge(raceuma_df, ana_df, on=["RACE_KEY", "UMABAN"])
