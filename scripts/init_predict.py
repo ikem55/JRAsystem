@@ -27,10 +27,10 @@ if __name__ == "__main__":
 #        term_start_date = '20200601'
 #        term_end_date = '20200802'
     target_list = [{"version_str": "win", "model_name": "raceuma"},
+                   {"version_str": "haito", "model_name": "race"},
                    {"version_str": "win5", "model_name": "raceuma"},
-                   {"version_str": "nigeuma", "model_name": "raceuma"},
+#                   {"version_str": "nigeuma", "model_name": "raceuma"},
 #                   {"version_str": "raptype", "model_name": "race"},
-#                   {"version_str": "haito", "model_name": "race"}
                    ]
     mock_flag = False
     export_mode = False
