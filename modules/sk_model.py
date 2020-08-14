@@ -202,15 +202,16 @@ class SkModel(object):
                       'コース', '曜日', '天候コード', '芝馬場状態コード', '芝馬場状態内', '芝馬場状態中', '芝馬場状態外', '芝馬場差', '直線馬場差最内',
                       '直線馬場差内', '直線馬場差中', '直線馬場差外', '直線馬場差大外', 'ダ馬場状態コード', 'ダ馬場状態内', 'ダ馬場状態中',
                       'ダ馬場状態外', 'ダ馬場差','連続何日目', '芝種類', '草丈', '転圧', '凍結防止剤',
-                      'クラスコード', 'ブリンカー', '芝適性コード', 'ダ適性コード',
                       'ZENSO1_KYOSO_RESULT', 'ZENSO2_KYOSO_RESULT', 'ZENSO3_KYOSO_RESULT', 'ZENSO4_KYOSO_RESULT', 'ZENSO5_KYOSO_RESULT',
                       'ZENSO1_RACE_KEY', 'ZENSO2_RACE_KEY', 'ZENSO3_RACE_KEY', 'ZENSO4_RACE_KEY', 'ZENSO5_RACE_KEY',
-                      '騎手コード', '調教師コード', '血統登録番号', 'KAISAI_KEY', #'入厩年月日', '併せクラス',
-                      'KYOSO_RESULT_KEY_1', '血統登録番号_1', 'NENGAPPI_1', '騎手コード_1', '調教師コード_1',
-                      'KYOSO_RESULT_KEY_2', '血統登録番号_2', 'NENGAPPI_2', '騎手コード_2', '調教師コード_2',
-                      'KYOSO_RESULT_KEY_3', '血統登録番号_3', 'NENGAPPI_3', '騎手コード_3', '調教師コード_3',
-                      'KYOSO_RESULT_KEY_4', '血統登録番号_4', 'NENGAPPI_4', '騎手コード_4', '調教師コード_4',
-                      'KYOSO_RESULT_KEY_5', '血統登録番号_5', 'NENGAPPI_5', '騎手コード_5', '調教師コード_5'], axis=1, inplace=True)
+                      '騎手コード', '調教師コード', '血統登録番号', 'KAISAI_KEY',
+                      'KYOSO_RESULT_KEY_1', '血統登録番号_1', 'NENGAPPI_1', '騎手コード_1',
+                      'KYOSO_RESULT_KEY_2', '血統登録番号_2', 'NENGAPPI_2', '騎手コード_2',
+                      'KYOSO_RESULT_KEY_3', '血統登録番号_3', 'NENGAPPI_3', '騎手コード_3',
+                      'KYOSO_RESULT_KEY_4', '血統登録番号_4', 'NENGAPPI_4', '騎手コード_4',
+                      'KYOSO_RESULT_KEY_5', '血統登録番号_5', 'NENGAPPI_5', '騎手コード_5'], axis=1, inplace=True)
+        # '入厩年月日', '併せクラス','クラスコード', 'ブリンカー', '芝適性コード', 'ダ適性コード',
+        # , '調教師コード_1', '調教師コード_2', '調教師コード_3','調教師コード_4', '調教師コード_5',
         return base_df
 
     def get_label_encoding_raceuma_df(self, base_df, index_list):

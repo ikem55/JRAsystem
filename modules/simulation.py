@@ -197,13 +197,14 @@ class Simulation(object):
         race_count = len(df["RACE_KEY"].drop_duplicates())
         hit_df = df[df["払戻"] != 0]
         hit_count = len(hit_df)
+        race_hit_count = len(hit_df["RACE_KEY"].drop_duplicates())
         avg_return = round(hit_df["払戻"].mean(), 0)
         std_return = round(hit_df["払戻"].std(), 0)
         max_return = hit_df["払戻"].max()
         sum_return = hit_df["払戻"].sum()
         avg = round(df["払戻"].mean() , 1)
         hit_rate = round(hit_count / all_count * 100 , 1) if all_count !=0 else 0
-        race_hit_rate = round(hit_count / race_count * 100 , 1) if race_count !=0 else 0
+        race_hit_rate = round(race_hit_count / race_count * 100 , 1) if race_count !=0 else 0
         sr = pd.Series(data=[cond_text, all_count, hit_count, race_count, avg, hit_rate, race_hit_rate, avg_return, std_return, max_return, all_count * 100 , sum_return]
                        , index=["条件", "件数", "的中数", "レース数", "回収率", "的中率", "R的中率", "払戻平均", "払戻偏差", "最大払戻", "購入総額", "払戻総額"])
         return sr.fillna(0)
