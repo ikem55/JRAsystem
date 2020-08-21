@@ -51,7 +51,7 @@ if __name__ == "__main__":
 
     intermediate_folder = dict_path + 'intermediate/target_file/'
     luigi.build([Create_target_file(start_date=start_date, end_date=end_date, term_start_date=term_start_date, term_end_date=term_end_date,
-                                    intermediate_folder=intermediate_folder, test_flag=test_flag)],local_scheduler=True)
+                                    intermediate_folder=intermediate_folder, test_flag=test_flag, dict_path=dict_path)],local_scheduler=True)
 
     jrdb = JrdbDownload()
     jrdb.delete_temp_text_file()
