@@ -595,5 +595,144 @@ class SkProc(object):
             std_analyze_df = std_analyze_df[["bin", "target", "count", "mean"]].copy()
             std_analyze_df.loc[:, "type"] = "std"
             all_analyze_df = pd.concat([all_analyze_df, std_analyze_df])
-
         return all_analyze_df
+
+    def create_mark_std_df(self, import_df):
+        """ 各予測値のFLAG値（偏差値）を横持変換する """
+        mark_std_df = import_df[["RACE_KEY", "UMABAN", "target", "predict_std"]].copy()
+        mark_std_df = mark_std_df.set_index(["RACE_KEY", "UMABAN", "target"]).unstack("target")
+        mark_std_df.columns = ["ANA_FLAG", "JIKU_FLAG", "WIN_FLAG"]
+        mark_std_df = mark_std_df.reset_index()
+        return mark_std_df
+
+    def create_mark_prob_df(self, import_df):
+        """ 各予測値のFLAG値（偏差値）を横持変換する """
+        mark_prob_df = import_df[["RACE_KEY", "UMABAN", "target", "prob"]].copy()
+        mark_prob_df = mark_prob_df.set_index(["RACE_KEY", "UMABAN", "target"]).unstack("target")
+        mark_prob_df.columns = ["ANA_PROB", "JIKU_PROB", "WIN_PROB"]
+        mark_prob_df = mark_prob_df.reset_index()
+        return mark_prob_df
+
+    def create_mark_base_df(self, import_df):
+        """ 各予測値を横持変換する """
+        win_df = import_df.query("target == 'WIN_FLAG'").copy()
+        win_df = win_df[["RACE_KEY", "UMABAN", "predict_std", "predict_rank", "prob", "target_date"]].rename(
+            columns={"predict_std": "win_std", "predict_rank": "win_rank", "prob": "win_prob"})
+        jiku_df = import_df.query("target == 'JIKU_FLAG'").copy()
+        jiku_df = jiku_df[["RACE_KEY", "UMABAN", "predict_std", "predict_rank", "prob"]].rename(
+            columns={"predict_std": "jiku_std", "predict_rank": "jiku_rank", "prob": "jiku_prob"})
+        ana_df = import_df.query("target == 'ANA_FLAG'").copy()
+        ana_df = ana_df[["RACE_KEY", "UMABAN", "predict_std", "predict_rank", "prob"]].rename(
+            columns={"predict_std": "ana_std", "predict_rank": "ana_rank", "prob": "ana_prob"})
+        mark_base_df = pd.merge(win_df, jiku_df, on=["RACE_KEY", "UMABAN"])
+        mark_base_df = pd.merge(mark_base_df, ana_df, on=["RACE_KEY", "UMABAN"])
+        mark_base_df.loc[:, "年月"] = mark_base_df["target_date"].str[0:6]
+        return mark_base_df
+
+    def create_mark_df(self, mark_base_df, win_rate, jiku_rate, ana_rate):
+        """ rateをかけてScoreと順位を計算したデータフレームを作成する。rateは２５％とかパーセント値。その後各予測値のprob値を横変換して追加する """
+        mark_df = mark_base_df.copy()
+        mark_df.loc[:, "SCORE"] = mark_df["win_std"] * win_rate / 100 + mark_df["jiku_std"] * jiku_rate / 100 + mark_df[
+            "ana_std"] * ana_rate / 100
+        mark_df.loc[:, "RANK"] = mark_df.groupby("RACE_KEY")["SCORE"].rank(ascending=False)
+        return mark_df
+
+    def get_result_df(self):
+        result_df = self.ld.ext.get_raceuma_table_base()[["RACE_KEY", "UMABAN", "着順", "単勝", "複勝"]].copy()
+        return result_df
+
+    def calc_monthly_tanpuku_df(self, mark_df, result_df):
+        ym_list = mark_df["年月"].drop_duplicates().tolist()
+        summary_df = pd.DataFrame()
+        for ym in ym_list:
+            temp_mark_df = mark_df.query(f"年月 == '{ym}'").copy()
+            temp_mark_df = pd.merge(temp_mark_df, result_df, on=["RACE_KEY", "UMABAN"])
+            for cond in ["win_rank == 1", "jiku_rank == 1", "ana_rank == 1"]:
+                temp_df = temp_mark_df.query(cond).copy()
+                cond_text = f"{cond} 年月 == {ym}"
+                temp_sr = self._calc_tanpuku_summary(temp_df, cond_text)
+                summary_df = summary_df.append(temp_sr, ignore_index=True)
+        return summary_df
+
+    def calc_monthly_mark_df(self, mark_df ,result_df):
+        ym_list = mark_df["年月"].drop_duplicates().tolist()
+        summary_df = pd.DataFrame()
+        for ym in ym_list:
+            temp_mark_df = mark_df.query(f"年月 == '{ym}'").copy()
+            temp_mark_df = pd.merge(temp_mark_df, result_df, on=["RACE_KEY", "UMABAN"])
+            for rank in [1,2,3,4,5]:
+                temp_df = temp_mark_df.query(f"RANK == {rank}").copy()
+                cond_text = f"RANK == {rank} and 年月 == {ym}"
+                temp_sr = self._calc_tanpuku_summary(temp_df, cond_text)
+                summary_df = summary_df.append(temp_sr, ignore_index=True)
+        return summary_df
+
+    def simulate_mark_rate(self, mark_base_df, result_df):
+        win_range = [30, 35, 40, 45]
+        jiku_range = [30, 35, 40, 45, 50]
+        ana_range = [15, 20, 25, 30]
+        mark_base_df = pd.merge(mark_base_df, result_df, on=["RACE_KEY", "UMABAN"])
+        summary_df = pd.DataFrame()
+        for win in win_range:
+            for jiku in jiku_range:
+                for ana in ana_range:
+                    if win + jiku + ana == 100:
+                        cond = f"WIN:{win}% JIKU:{jiku}% ANA:{ana}% and RANK == 1"
+                        mark_df = self.create_mark_df(mark_base_df, win, jiku, ana)
+                        mark_df = mark_df.query("RANK == 1")
+                        temp_sr = self._calc_tanpuku_summary(mark_df, cond)
+                        temp_sr["win_rate"] = win
+                        temp_sr["jiku_rate"] = jiku
+                        temp_sr["ana_rate"] = ana
+                        summary_df = summary_df.append(temp_sr, ignore_index=True)
+        summary_df = summary_df.sort_values("複勝回収率", ascending=False).reset_index()
+        return summary_df
+
+
+    def _calc_tanpuku_summary(self, df, cond_text):
+        all_count = len(df)
+        race_count = len(df["RACE_KEY"].drop_duplicates())
+        tansho_hit_df = df[df["単勝"] != 0]
+        tansho_hit_count = len(tansho_hit_df)
+        tansho_race_hit_count = len(tansho_hit_df["RACE_KEY"].drop_duplicates())
+        tansho_avg_return = round(tansho_hit_df["単勝"].mean(), 0)
+        tansho_std_return = round(tansho_hit_df["単勝"].std(), 0)
+        tansho_max_return = tansho_hit_df["単勝"].max()
+        tansho_avg = round(df["単勝"].mean() , 1)
+        tansho_hit_rate = round(tansho_hit_count / all_count * 100 , 1) if all_count !=0 else 0
+        tansho_race_hit_rate = round(tansho_race_hit_count / race_count * 100 , 1) if race_count !=0 else 0
+
+        fukusho_hit_df = df[df["複勝"] != 0]
+        fukusho_hit_count = len(fukusho_hit_df)
+        fukusho_race_hit_count = len(fukusho_hit_df["RACE_KEY"].drop_duplicates())
+        fukusho_avg_return = round(fukusho_hit_df["複勝"].mean(), 0)
+        fukusho_std_return = round(fukusho_hit_df["複勝"].std(), 0)
+        fukusho_max_return = fukusho_hit_df["複勝"].max()
+        fukusho_avg = round(df["複勝"].mean() , 1)
+        fukusho_hit_rate = round(fukusho_hit_count / all_count * 100 , 1) if all_count !=0 else 0
+        fukusho_race_hit_rate = round(fukusho_race_hit_count / race_count * 100 , 1) if race_count !=0 else 0
+
+        sr = pd.Series(data=[cond_text, all_count, race_count, tansho_hit_count, tansho_avg, tansho_hit_rate, tansho_race_hit_rate,
+                             tansho_avg_return, tansho_std_return, tansho_max_return,
+                             fukusho_hit_count, fukusho_avg, fukusho_hit_rate, fukusho_race_hit_rate,
+                             fukusho_avg_return, fukusho_std_return, fukusho_max_return]
+                       , index=["条件", "件数", "レース数", "単勝的中数", "単勝回収率", "単勝的中率", "単勝R的中率", "単勝払戻平均", "単勝払戻偏差", "単勝最大払戻",
+                                "複勝的中数", "複勝回収率", "複勝的中率", "複勝R的中率", "複勝払戻平均", "複勝払戻偏差", "複勝最大払戻"])
+        return sr.fillna(0)
+
+    def _calc_summary(self, df, cond_text):
+        all_count = len(df)
+        race_count = len(df["RACE_KEY"].drop_duplicates())
+        hit_df = df[df["払戻"] != 0]
+        hit_count = len(hit_df)
+        race_hit_count = len(hit_df["RACE_KEY"].drop_duplicates())
+        avg_return = round(hit_df["払戻"].mean(), 0)
+        std_return = round(hit_df["払戻"].std(), 0)
+        max_return = hit_df["払戻"].max()
+        sum_return = hit_df["払戻"].sum()
+        avg = round(df["払戻"].mean() , 1)
+        hit_rate = round(hit_count / all_count * 100 , 1) if all_count !=0 else 0
+        race_hit_rate = round(race_hit_count / race_count * 100 , 1) if race_count !=0 else 0
+        sr = pd.Series(data=[cond_text, all_count, hit_count, race_count, avg, hit_rate, race_hit_rate, avg_return, std_return, max_return, all_count * 100 , sum_return]
+                       , index=["条件", "件数", "的中数", "レース数", "回収率", "的中率", "R的中率", "払戻平均", "払戻偏差", "最大払戻", "購入総額", "払戻総額"])
+        return sr.fillna(0)

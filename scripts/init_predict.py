@@ -1,4 +1,4 @@
-from modules.luigi_tasks import Calc_predict_data, Create_target_file, Sub_download_jrdb_file
+from modules.luigi_tasks import Calc_predict_data, Create_target_file, Sub_download_jrdb_file, Simulate_kaime_data
 from modules.sk_proc import SkProc
 import my_config as mc
 import sys
@@ -29,17 +29,17 @@ if __name__ == "__main__":
     target_list = [{"version_str": "win", "model_name": "raceuma"},
                    {"version_str": "haito", "model_name": "race"},
                    {"version_str": "win5", "model_name": "raceuma"},
-#                   {"version_str": "nigeuma", "model_name": "raceuma"},
+                   {"version_str": "nigeuma", "model_name": "raceuma"},
 #                   {"version_str": "raptype", "model_name": "race"},
                    ]
     mock_flag = False
-    export_mode = False
+    export_mode = True
     dict_path = mc.return_base_path(test_flag)
 
     intermediate_folder = dict_path + 'intermediate/download_jrdb/'
-    #if not test_flag:
-    #    luigi.build([Sub_download_jrdb_file(end_date=end_date, intermediate_folder=intermediate_folder)],
-    #                local_scheduler=True)
+    if not test_flag:
+        luigi.build([Sub_download_jrdb_file(end_date=end_date, intermediate_folder=intermediate_folder)],
+                    local_scheduler=True)
 
     for target in target_list:
         model_name = target["model_name"]
@@ -53,7 +53,11 @@ if __name__ == "__main__":
         luigi.build([Calc_predict_data(start_date=start_date, end_date=end_date, skproc=skproc,intermediate_folder=intermediate_folder, export_mode=export_mode)],
                     local_scheduler=True)
 
+    intermediate_folder = dict_path + 'intermediate/raceuma/win/'
+    luigi.build([Simulate_kaime_data(start_date=start_date, end_date=end_date, skproc=skproc,intermediate_folder=intermediate_folder, dict_path=dict_path)],
+                    local_scheduler=True)
+
     if not test_flag:
         intermediate_folder = dict_path + 'intermediate/target_file/'
         luigi.build([Create_target_file(start_date=start_date, end_date=end_date, term_start_date=term_start_date, term_end_date=term_end_date,
-                                        intermediate_folder=intermediate_folder, test_flag=test_flag)],local_scheduler=True)
+                                        intermediate_folder=intermediate_folder, test_flag=test_flag, dict_path=dict_path)],local_scheduler=True)

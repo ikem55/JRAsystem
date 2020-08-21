@@ -17,7 +17,7 @@ class Output(object):
     slack_realtime_url = mc.SLACK_realtime_webhook_url
     kaime_columns = ["RACE_ID", "エリア", "券種", "購入金額", "目１", "目２", "目３"]
 
-    def __init__(self, start_date, end_date, term_start_date, term_end_date, test_flag):
+    def __init__(self, start_date, end_date, term_start_date, term_end_date, test_flag, target_sr, cond_df):
         self.start_date = start_date
         self.end_date = end_date
         self.term_start_date = term_start_date
@@ -32,26 +32,49 @@ class Output(object):
         self.auto_bet_path = self.target_path + 'AUTO_BET/'
         self.for_pbi_path = self.target_path + 'pbi/'
         self._set_file_list()
-        self._set_vote_condition()
+        self._set_vote_condition(target_sr, cond_df)
 
-    def _set_vote_condition(self):
-        self.tansho_cond = "WIN_PROB >= 0.2 and ANA_PROB >= 0.2 and RANK == 1"
-        self.tansho_odds_cond = "単勝オッズ >= 8"
-        self.fukusho_cond = "ANA_PROB >= 0.1 and JIKU_PROB >= 0.4 and RANK == 1"
-        self.fukusho_odds_cond = "複勝オッズ >= 3"
-        self.umaren1_cond = "RANK == 1 and JIKU_PROB >= 0.5"
-        self.umaren2_cond = "RANK <= 4 and WIN_PROB >= 0.3"
-        self.umaren_odds_cond = "40 <= オッズ <= 80"
-        self.umatan1_cond = "RANK == 1 and JIKU_PROB >= 0.5 and WIN_PROB >= 0.3"
-        self.umatan2_cond = "JIKU_PROB >= 0.6 and RANK <= 4"
-        self.umatan_odds_cond = "20 <= オッズ <= 300"
-        self.wide1_cond = "RANK == 1 and ANA_PROB >= 0.3"
-        self.wide2_cond = "RANK <= 3 and JIKU_PROB >= 0.3"
-        self.wide_odds_cond = "10 <= オッズ <= 30"
-        self.sanrenpuku1_cond = "RANK == 1 and ANA_PROB >= 0.2"
-        self.sanrenpuku2_cond = "RANK <= 3 and JIKU_PROB >= 0.3"
-        self.sanrenpuku3_cond = "RANK <= 6 and WIN_PROB >= 0.7"
-        self.sanrenpuku_odds_cond = "40 <= オッズ <= 80"
+    def _set_vote_condition(self, target_sr, cond_df):
+        self.win_rate = target_sr["win_rate"]
+        self.jiku_rate = target_sr["jiku_rate"]
+        self.ana_rate = target_sr["ana_rate"]
+        print(f"----- mark rate: win:{self.win_rate}% jiku:{self.jiku_rate}% ana:{self.ana_rate}%")
+        tansho_sr = cond_df.query("タイプ == '単勝'")
+        print(tansho_sr["オッズ条件"])
+        self.tansho_flag = False if tansho_sr.empty else True
+        if self.tansho_flag:
+            self.tansho_cond = tansho_sr["条件"].values[0]
+            self.tansho_odds_cond = tansho_sr["オッズ条件"].values[0]
+        fukusho_sr = cond_df.query("タイプ == '複勝'")
+        self.fukusho_flag = False if fukusho_sr.empty else True
+        if self.fukusho_flag:
+            self.fukusho_cond = fukusho_sr["条件"].values[0]
+            self.fukusho_odds_cond = fukusho_sr["オッズ条件"].values[0]
+        umaren_sr = cond_df.query("タイプ == '馬連'")
+        self.umaren_flag = False if umaren_sr.empty else True
+        if self.umaren_flag:
+            self.umaren1_cond = umaren_sr["条件"].values[0][0]
+            self.umaren2_cond = umaren_sr["条件"].values[0][1]
+            self.umaren_odds_cond = umaren_sr["オッズ条件"].values[0]
+        umatan_sr = cond_df.query("タイプ == '馬単'")
+        self.umatan_flag = False if umatan_sr.empty else True
+        if self.umatan_flag:
+            self.umatan1_cond = umatan_sr["条件"].values[0][0]
+            self.umatan2_cond = umatan_sr["条件"].values[0][1]
+            self.umatan_odds_cond = umatan_sr["オッズ条件"].values[0]
+        wide_sr = cond_df.query("タイプ == 'ワイド'")
+        self.wide_flag = False if wide_sr.empty else True
+        if self.wide_flag:
+            self.wide1_cond = wide_sr["条件"].values[0][0]
+            self.wide2_cond = wide_sr["条件"].values[0][1]
+            self.wide_odds_cond = wide_sr["オッズ条件"].values[0]
+        sanrenpuku_sr = cond_df.query("タイプ == '三連複'")
+        self.sanrenpuku_flag = False if sanrenpuku_sr.empty else True
+        if self.sanrenpuku_flag:
+            self.sanrenpuku1_cond = sanrenpuku_sr["条件"].values[0][0]
+            self.sanrenpuku2_cond = sanrenpuku_sr["条件"].values[0][1]
+            self.sanrenpuku3_cond = sanrenpuku_sr["条件"].values[0][2]
+            self.sanrenpuku_odds_cond = sanrenpuku_sr["オッズ条件"].values[0]
 
     def _set_file_list(self):
         race_base_df = self.ext.get_race_before_table_base()[["RACE_KEY", "NENGAPPI", "距離", "芝ダ障害コード", "内外", "条件"]]
@@ -140,7 +163,7 @@ class Output(object):
         self.raceuma_result_df = raceuma_result_df
 
     def set_pred_df(self):
-        win5_df = self.get_pred_df("win5", "WIN_FLAG")
+        win5_df = self.get_pred_df("win5", "WIN5_FLAG")
         win5_df.loc[:, "RACEUMA_ID"] = win5_df.apply(
             lambda x: mu.convert_jrdb_id(x["RACE_KEY"], x["target_date"]) + x["UMABAN"], axis=1)
         win5_df.loc[:, "predict_std"] = round(win5_df["predict_std"], 2)
@@ -169,7 +192,7 @@ class Output(object):
                             on="RACEUMA_ID")
         score_df = pd.merge(score_df, ana_df[["RACEUMA_ID", "predict_std"]].rename(columns={"predict_std": "ana_std"}),
                             on="RACEUMA_ID")
-        score_df.loc[:, "predict_std"] = score_df["win_std"] * 0.4 + score_df["jiku_std"] * 0.4 + score_df["ana_std"] * 0.2
+        score_df.loc[:, "predict_std"] = score_df["win_std"] * self.win_rate / 100 + score_df["jiku_std"] * self.jiku_rate / 100  + score_df["ana_std"] * self.ana_rate / 100
         grouped_score_df = score_df.groupby("RACE_KEY")
         score_df.loc[:, "predict_rank"] = grouped_score_df["predict_std"].rank("dense", ascending=False)
         score_df.loc[:, "predict_std"] = round(score_df["predict_std"], 2)
@@ -215,7 +238,6 @@ class Output(object):
     def create_raceuma_score_file(self):
         for date in self.date_list:
             print(date)
-            print(self.win_df.head())
             win5_temp_df = self.win5_df.query(f"target_date == '{date}'")[
                 ["RACEUMA_ID", "prob", "predict_rank"]].sort_values("RACEUMA_ID")
             win5_temp_df.loc[:, "prob"] = (win5_temp_df["prob"] * 100 ).astype("int")
@@ -354,14 +376,12 @@ class Output(object):
         mark_base_df.columns = ["ANA_FLAG", "JIKU_FLAG", "WIN_FLAG"]
         mark_base_df = mark_base_df.reset_index()
         mark_df = mark_base_df.copy()
-        mark_df.loc[:, "SCORE"] = mark_df["WIN_FLAG"] * 0.4 + mark_base_df["JIKU_FLAG"] * 0.4 + mark_base_df["ANA_FLAG"] * 0.2
+        mark_df.loc[:, "SCORE"] = mark_df["WIN_FLAG"] * self.win_rate / 100  + mark_base_df["JIKU_FLAG"] / 100  * self.jiku_rate + mark_base_df["ANA_FLAG"] * self.ana_rate / 100
         mark_df.loc[:, "RANK"] = mark_df.groupby("RACE_KEY")["SCORE"].rank(ascending=False)
         mark_prob_df = base_df[["RACE_KEY", "UMABAN", "target", "prob"]].copy()
         mark_prob_df = mark_prob_df.set_index(["RACE_KEY", "UMABAN", "target"]).unstack("target")
-        print(mark_prob_df.head())
-        mark_prob_df.columns = ["ANA_PROB", "JIKU_PROB", "WIN_PROB"]
+        mark_prob_df.columns = ["ana_prob", "jiku_prob", "win_prob"]
         mark_prob_df = mark_prob_df.reset_index()
-        print(mark_prob_df.head())
         self.target_mark_df = pd.merge(mark_df, mark_prob_df, on=["RACE_KEY", "UMABAN"])
 
         race_df = self.ext.get_race_before_table_base()
@@ -378,52 +398,49 @@ class Output(object):
         print(target_df.shape)
         print(target_df.iloc[0])
         sim = Simulation(self.start_date, self.end_date, False, target_df)
+        tansho_target_bet_df = pd.DataFrame(); fukusho_target_bet_df = pd.DataFrame(); umaren_target_bet_df = pd.DataFrame()
+        umatan_target_bet_df = pd.DataFrame(); wide_target_bet_df = pd.DataFrame(); sanrenpuku_target_bet_df = pd.DataFrame()
         print("--- tansho ----")
-        tansho_kaime_df = sim.create_tansho_base_df(self.tansho_cond)
-        print(tansho_kaime_df.shape)
-        tansho_target_bet_df = self._get_tansho_bet_df(tansho_kaime_df)
-        print(tansho_target_bet_df.shape)
+        if self.tansho_flag:
+            print(f" 条件: {self.tansho_cond}  オッズ:{self.tansho_odds_cond}")
+            tansho_kaime_df = sim.create_tansho_base_df(self.tansho_cond)
+            print(tansho_kaime_df.shape)
+            tansho_target_bet_df = self._get_tansho_bet_df(tansho_kaime_df)
+            print(tansho_target_bet_df.shape)
         print("--- fukusho ----")
-        fukusho_kaime_df = sim.create_fukusho_base_df(self.fukusho_cond)
-        #fukusho_uma_df = target_df.query(self.fukusho_cond).copy()
-        print(fukusho_kaime_df.shape)
-        fukusho_target_bet_df = self._get_fukusho_bet_df(fukusho_kaime_df)
-        print(fukusho_target_bet_df.shape)
+        if self.fukusho_flag:
+            print(f" 条件: {self.fukusho_cond}  オッズ:{self.fukusho_odds_cond}")
+            fukusho_kaime_df = sim.create_fukusho_base_df(self.fukusho_cond)
+            print(fukusho_kaime_df.shape)
+            fukusho_target_bet_df = self._get_fukusho_bet_df(fukusho_kaime_df)
+            print(fukusho_target_bet_df.shape)
         print("--- umaren ----")
-        umaren_kaime_df = sim.create_umaren_base_df(self.umaren1_cond, self.umaren2_cond)
-        print(umaren_kaime_df.shape)
-        #umaren_uma1_df = target_df.query(self.umaren1_cond).copy()
-        #umaren_uma2_df = target_df.query(self.umaren2_cond).copy()
-        #print(umaren_uma1_df.shape)
-        #print(umaren_uma2_df.shape)
-        #umaren_target_bet_df = self._get_umaren_bet_df(umaren_uma1_df, umaren_uma2_df)
-        umaren_target_bet_df = self._get_umaren_bet_df(umaren_kaime_df)
-        print(umaren_target_bet_df.shape)
+        if self.umaren_flag:
+            print(f" 条件: {self.umaren1_cond}/ {self.umaren2_cond}  オッズ:{self.umaren_odds_cond}")
+            umaren_kaime_df = sim.create_umaren_base_df(self.umaren1_cond, self.umaren2_cond)
+            print(umaren_kaime_df.shape)
+            umaren_target_bet_df = self._get_umaren_bet_df(umaren_kaime_df)
+            print(umaren_target_bet_df.shape)
         print("--- umatan ----")
-        umatan_kaime_df = sim.create_umatan_base_df(self.umatan1_cond, self.umatan2_cond)
-        #umatan_uma1_df = target_df.query(self.umatan1_cond).copy()
-        #umatan_uma2_df = target_df.query(self.umatan2_cond).copy()
-        print(umatan_kaime_df.shape)
-        umatan_target_bet_df = self._get_umatan_bet_df(umatan_kaime_df)
-        print(umatan_target_bet_df.shape)
+        if self.umatan_flag:
+            print(f" 条件: {self.umatan1_cond}/ {self.umatan2_cond}  オッズ:{self.umatan_odds_cond}")
+            umatan_kaime_df = sim.create_umatan_base_df(self.umatan1_cond, self.umatan2_cond)
+            print(umatan_kaime_df.shape)
+            umatan_target_bet_df = self._get_umatan_bet_df(umatan_kaime_df)
+            print(umatan_target_bet_df.shape)
         print("--- wide ----")
-        wide_kaime_df = sim.create_wide_base_df(self.wide1_cond, self.wide2_cond)
-        #wide_uma1_df = target_df.query(self.wide1_cond).copy()
-        #wide_uma2_df = target_df.query(self.wide2_cond).copy()
-        print(wide_kaime_df.shape)
-        #print(wide_uma2_df.shape)
-        wide_target_bet_df = self._get_wide_bet_df(wide_kaime_df)
-        print(wide_target_bet_df.shape)
+        if self.wide_flag:
+            print(f" 条件: {self.wide1_cond}/ {self.wide2_cond}  オッズ:{self.wide_odds_cond}")
+            wide_kaime_df = sim.create_wide_base_df(self.wide1_cond, self.wide2_cond)
+            print(wide_kaime_df.shape)
+            wide_target_bet_df = self._get_wide_bet_df(wide_kaime_df)
+            print(wide_target_bet_df.shape)
         print("--- sanrenpuku ----")
-        sanrenpuku_kaime_df = sim.create_sanrenpuku_base_df(self.sanrenpuku1_cond, self.sanrenpuku2_cond, self.sanrenpuku3_cond)
-        #sanrenpuku_uma1_df = target_df.query(self.sanrenpuku1_cond).copy()
-        #sanrenpuku_uma2_df = target_df.query(self.sanrenpuku2_cond).copy()
-        #sanrenpuku_uma3_df = target_df.query(self.sanrenpuku3_cond).copy()
-        print(sanrenpuku_kaime_df.shape)
-        #print(sanrenpuku_uma2_df.shape)
-        #print(sanrenpuku_uma3_df.shape)
-        sanrenpuku_target_bet_df = self._get_sanrenpuku_bet_df(sanrenpuku_kaime_df)
-        print(sanrenpuku_target_bet_df.shape)
+        if self.sanrenpuku_flag:
+            print(f" 条件: {self.sanrenpuku1_cond}/ {self.sanrenpuku2_cond}/ {self.sanrenpuku3_cond}  オッズ:{self.sanrenpuku_odds_cond}")
+            sanrenpuku_kaime_df = sim.create_sanrenpuku_base_df(self.sanrenpuku1_cond, self.sanrenpuku2_cond, self.sanrenpuku3_cond)
+            sanrenpuku_target_bet_df = self._get_sanrenpuku_bet_df(sanrenpuku_kaime_df)
+            print(sanrenpuku_target_bet_df.shape)
         target_bet_df = pd.concat([tansho_target_bet_df, fukusho_target_bet_df, umaren_target_bet_df, umatan_target_bet_df, wide_target_bet_df, sanrenpuku_target_bet_df])
         target_bet_df = target_bet_df.sort_values(["RACE_ID", "エリア", "券種", "購入金額", "目１", "目２", "目３"])
         target_bet_df.to_csv(self.auto_bet_path + "target_bet.csv", index=False, header=False)
@@ -442,7 +459,7 @@ class Output(object):
             bet_df.loc[:, "目２"] =""
             bet_df.loc[:, "目３"] =""
             bet_df.loc[:, "券種"] = '0'
-            bet_df.loc[:, "オッズ"] = bet_df["単勝オッズ"]
+            # bet_df.loc[:, "オッズ"] = bet_df["単勝オッズ"]
             target_bet_df = self._get_target_bet_df(bet_df)
             return target_bet_df
 
@@ -459,7 +476,7 @@ class Output(object):
             bet_df.loc[:, "目２"] =""
             bet_df.loc[:, "目３"] =""
             bet_df.loc[:, "券種"] = '1'
-            bet_df.loc[:, "オッズ"] = bet_df["複勝オッズ"]
+            # bet_df.loc[:, "オッズ"] = bet_df["複勝オッズ"]
             target_bet_df = self._get_target_bet_df(bet_df)
             return target_bet_df
 
@@ -472,7 +489,6 @@ class Output(object):
         if len(bet_df.index) == 0:
             return pd.DataFrame(columns=self.kaime_columns)
         else:
-            print(bet_df.head())
             bet_df.loc[:, "目１"] =bet_df["UMABAN"].apply(lambda x: x[0])
             bet_df.loc[:, "目２"] =bet_df["UMABAN"].apply(lambda x: x[1])
             bet_df.loc[:, "目３"] =""
@@ -800,7 +816,7 @@ class Output(object):
         bet_df.loc[:, "変換フラグ"] = 0
         bet_df.loc[:, "購入金額"] = 100
         bet_df.loc[:, "的中時の配当"] = 0
-        bet_df.loc[:, "エリア"] = "G"
+        bet_df.loc[:, "エリア"] = "F"
         bet_df.loc[:, "マーク"] = ""
         bet_df = bet_df[["RACE_ID", "変換フラグ", "券種", "目１", "目２", "目３", "購入金額", "オッズ", "的中時の配当", "エリア", "マーク"]].copy()
         return bet_df

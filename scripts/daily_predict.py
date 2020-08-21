@@ -23,10 +23,12 @@ if __name__ == "__main__":
         end_date = (dt.now() + timedelta(days=1)).strftime('%Y/%m/%d')
         term_start_date = (dt.now() + timedelta(days=-19)).strftime('%Y%m%d')
         term_end_date = (dt.now() + timedelta(days=1)).strftime('%Y%m%d')
-    target_list = [{"version_str": "win", "model_name": "raceuma"},
-                   {"version_str": "nigeuma", "model_name": "raceuma"},
-                   {"version_str": "raptype", "model_name": "race"},
-                   {"version_str": "haito", "model_name": "race"}]
+        target_list = [{"version_str": "win", "model_name": "raceuma"},
+                       {"version_str": "haito", "model_name": "race"},
+                       {"version_str": "win5", "model_name": "raceuma"},
+                       {"version_str": "nigeuma", "model_name": "raceuma"},
+                       #                   {"version_str": "raptype", "model_name": "race"},
+                       ]
     mock_flag = False
     export_mode = False
     dict_path = mc.return_base_path(test_flag)
