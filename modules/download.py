@@ -110,27 +110,27 @@ class JrdbDownload(object):
             for li in table.findAll('li'):
                 if type == "PACI":
 #                    if li.text[0:6] == "PACI16" or li.text[0:6] == "PACI17" or li.text[0:6] == "PACI18" or li.text[0:6] == "PACI19" or li.text[0:5] == "PACI2":
-                    if li.text[0:6] == "PACI19" or li.text[0:5] == "PACI2":
+                    if li.text[0:5] == "PACI2":
                         sr = pd.Series(
                             [li.text.strip('\n'), li.a.attrs['href']], index=target_df.columns)
                         target_df = target_df.append(sr, ignore_index=True)
                 elif type == "SED":
-                    if li.text[0:5] == "SED19" or li.text[0:4] == "SED2":
+                    if li.text[0:4] == "SED2":
                         sr = pd.Series(
                             [li.text.strip('\n'), li.a.attrs['href']], index=target_df.columns)
                         target_df = target_df.append(sr, ignore_index=True)
                 elif type == "SKB":
-                    if li.text[0:5] == "SKB19" or li.text[0:4] == "SKB2":
+                    if li.text[0:4] == "SKB2":
                         sr = pd.Series(
                             [li.text.strip('\n'), li.a.attrs['href']], index=target_df.columns)
                         target_df = target_df.append(sr, ignore_index=True)
                 elif type == "HJC":
-                    if li.text[0:5] == "HJC19" or li.text[0:4] == "HJC2":
+                    if li.text[0:4] == "HJC2":
                         sr = pd.Series(
                             [li.text.strip('\n'), li.a.attrs['href']], index=target_df.columns)
                         target_df = target_df.append(sr, ignore_index=True)
                 elif type == "TYB":
-                    if li.text[0:5] == "TYB19" or li.text[0:4] == "TYB2":
+                    if li.text[0:4] == "TYB2":
                         sr = pd.Series(
                             [li.text.strip('\n'), li.a.attrs['href']], index=target_df.columns)
                         target_df = target_df.append(sr, ignore_index=True)
