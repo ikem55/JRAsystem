@@ -68,8 +68,8 @@ class Simulation(object):
                 base_df = base_df.rename(columns={"単勝オッズ": "オッズ"})
             else:
                 base_df = base_df.rename(columns={"複勝オッズ": "オッズ"})
-            low_odds_list = [5, 8, 10]
-            high_odds_list = [10, 20, 30, 50]
+            low_odds_list = [5, 10]
+            high_odds_list = [15, 30, 50, 9999]
         elif type == "馬連" or type == "ワイド":
             temp_raceuma1_df = raceuma_df.query(cond[0]).copy()
             temp_raceuma2_df = raceuma_df.query(cond[1]).copy()
@@ -77,10 +77,12 @@ class Simulation(object):
             temp_raceuma_df.loc[:, "UMABAN_1"] = temp_raceuma_df["UMABAN"].str[0:2]
             temp_raceuma_df.loc[:, "UMABAN_2"] = temp_raceuma_df["UMABAN"].str[4:6]
             base_df = pd.merge(temp_raceuma_df, odds_df, on=["RACE_KEY", "UMABAN_1", "UMABAN_2"])
+            low_odds_list = [10, 15, 20]
+            high_odds_list = [50, 80, 100, 99999]
             if type == "ワイド":
                 base_df = base_df.rename(columns={"ワイドオッズ": "オッズ"})
-            low_odds_list = [10, 15, 20]
-            high_odds_list = [30, 50, 80, 100]
+                low_odds_list = [10, 15]
+                high_odds_list = [30, 50, 9999]
         elif type == "馬単":
             temp_raceuma1_df = raceuma_df.query(cond[0]).copy()
             temp_raceuma2_df = raceuma_df.query(cond[1]).copy()
@@ -90,7 +92,7 @@ class Simulation(object):
             base_df = pd.merge(temp_raceuma_df, odds_df, on=["RACE_KEY", "UMABAN_1", "UMABAN_2"])
             base_df = base_df.rename(columns={"馬単オッズ": "オッズ"})
             low_odds_list = [10, 20, 30]
-            high_odds_list = [30, 50, 80, 100, 150]
+            high_odds_list = [50, 100, 150, 99999]
         elif type == "三連複":
             temp_raceuma1_df = raceuma_df.query(cond[0]).copy()
             temp_raceuma2_df = raceuma_df.query(cond[1]).copy()
@@ -102,7 +104,7 @@ class Simulation(object):
             base_df = pd.merge(temp_raceuma_df, odds_df, on=["RACE_KEY", "UMABAN_1", "UMABAN_2", "UMABAN_3"])
             base_df = base_df.rename(columns={"３連複オッズ": "オッズ"})
             low_odds_list = [10, 20, 30]
-            high_odds_list = [30, 50, 80, 100, 150]
+            high_odds_list = [50, 100, 150, 99999]
         else:
             base_df = ""; low_odds_list = []; high_odds_list = []
         return base_df, low_odds_list, high_odds_list
@@ -136,8 +138,6 @@ class Simulation(object):
         else:
             base_sr["オッズ条件"] = "0 <= オッズ <= 100000"
             return base_sr
-
-
 
 
     def _subproc_get_result_data(self, type):
@@ -186,7 +186,7 @@ class Simulation(object):
             print("対象なし")
             return pd.Series()
         else:
-            target_sim_df = candidate_sim_df.sort_values("的中数", ascending=False).head(10)
+            target_sim_df = candidate_sim_df.sort_values("的中数", ascending=False).head(20)
             # 指定した条件の年月Foldを計算し、回収率１００％以上の件数が多い条件を採用。同数の場合は的中件数が多いものを採用
             print(target_sim_df)
             sim_df = pd.DataFrame()
@@ -241,7 +241,7 @@ class Simulation(object):
                         temp_raceuma_df = raceuma_df.query(cond)
                         if len(temp_raceuma_df.index) != 0:
                             temp_sr = self._calc_summary(temp_raceuma_df, cond)
-                            if temp_sr["回収率"] >= 105 and temp_sr["購入基準"] == "1":
+                            if temp_sr["回収率"] >= 102 and temp_sr["購入基準"] == "1":
                                 sim_df = sim_df.append(temp_sr, ignore_index=True)
         sim_df = sim_df.drop_duplicates(subset=["件数", "回収率", "払戻偏差"])
         return sim_df
@@ -250,13 +250,12 @@ class Simulation(object):
     def proc_simulation_umaren(self, raceuma_df, result_df, ren=True):
         sim_df = pd.DataFrame()
         for rank1 in [1,2]:
-            print(f"rank1: {rank1}")
             for win_prob in self.win_prob_list:
                 for jiku_prob in self.jiku_prob_list:
                     for ana_prob in self.ana_prob_list:
                         cond1 = f"RANK <= {rank1} and win_prob >= {win_prob} and jiku_prob >= {jiku_prob} and ana_prob >= {ana_prob}"
                         temp_raceuma1_df = raceuma_df.query(cond1).copy()
-                        for rank2 in [3,4,5]:
+                        for rank2 in [4,5]:
                             if rank1 < rank2:
                                 for win_prob2 in [0, 0.3, 0.5]:
                                     for jiku_prob2 in [0, 0.2, 0.4]:
@@ -267,7 +266,7 @@ class Simulation(object):
                                             if len(temp_raceuma_df.index) != 0:
                                                 cond = [cond1, cond2]
                                                 temp_sr = self._calc_summary(temp_raceuma_df, cond)
-                                                if temp_sr["回収率"] >= 110 and temp_sr["購入基準"] == "1":
+                                                if temp_sr["回収率"] >= 105 and temp_sr["購入基準"] == "1":
                                                     sim_df = sim_df.append(temp_sr, ignore_index=True)
         sim_df = sim_df.drop_duplicates(subset=["件数", "回収率", "払戻偏差"])
         return sim_df
@@ -297,25 +296,23 @@ class Simulation(object):
                 for ana_prob in self.ana_prob_list:
                     cond1 = f"RANK == 1 and win_prob >= {win_prob} and jiku_prob >= {jiku_prob} and ana_prob >= {ana_prob}"
                     temp_raceuma1_df = raceuma_df.query(cond1).copy()
-                    for rank2 in [2,3]:
-                        print(f"rank2: {rank2}")
-                        for win_prob2 in [0, 0.3]:
-                            for jiku_prob2 in [0, 0.2]:
-                                for ana_prob2 in [0, 0.2]:
-                                    cond2 = f"RANK <= {rank2} and win_prob >= {win_prob2} and jiku_prob >= {jiku_prob2} and ana_prob >= {ana_prob2}"
-                                    temp_raceuma2_df = raceuma_df.query(cond2).copy()
-                                    for rank3 in [5,6]:
-                                        for win_prob3 in [0, 0.2]:
-                                            for jiku_prob3 in [0, 0.1]:
-                                                for ana_prob3 in [0, 0.1]:
-                                                    cond3 = f"RANK <= {rank3} and win_prob >= {win_prob3} and jiku_prob >= {jiku_prob3} and ana_prob >= {ana_prob3}"
-                                                    temp_raceuma3_df = raceuma_df.query(cond3).copy()
-                                                    temp_raceuma_df = self._subproc_create_sanrenpuku_df(temp_raceuma1_df, temp_raceuma2_df, temp_raceuma3_df, result_df)
-                                                    if len(temp_raceuma_df.index) != 0:
-                                                        cond = [cond1, cond2, cond3]
-                                                        temp_sr = self._calc_summary(temp_raceuma_df, cond)
-                                                        if temp_sr["回収率"] >= 110 and temp_sr["購入基準"] == "1":
-                                                            sim_df = sim_df.append(temp_sr, ignore_index=True)
+                    for win_prob2 in [0, 0,3, 0.5]:
+                        for jiku_prob2 in [0, 0.2, 0.4]:
+                            for ana_prob2 in [0, 0.2, 0.3]:
+                                cond2 = f"RANK <= 3 and win_prob >= {win_prob2} and jiku_prob >= {jiku_prob2} and ana_prob >= {ana_prob2}"
+                                temp_raceuma2_df = raceuma_df.query(cond2).copy()
+                                for rank3 in [4,5]:
+                                    for win_prob3 in [0, 0.3]:
+                                        for jiku_prob3 in [0, 0.2]:
+                                            for ana_prob3 in [0, 0.2]:
+                                                cond3 = f"RANK <= {rank3} and win_prob >= {win_prob3} and jiku_prob >= {jiku_prob3} and ana_prob >= {ana_prob3}"
+                                                temp_raceuma3_df = raceuma_df.query(cond3).copy()
+                                                temp_raceuma_df = self._subproc_create_sanrenpuku_df(temp_raceuma1_df, temp_raceuma2_df, temp_raceuma3_df, result_df)
+                                                if len(temp_raceuma_df.index) != 0:
+                                                    cond = [cond1, cond2, cond3]
+                                                    temp_sr = self._calc_summary(temp_raceuma_df, cond)
+                                                    if temp_sr["回収率"] >= 105 and temp_sr["購入基準"] == "1":
+                                                        sim_df = sim_df.append(temp_sr, ignore_index=True)
         sim_df = sim_df.drop_duplicates(subset=["件数", "回収率", "払戻偏差"])
         return sim_df
 
@@ -533,6 +530,7 @@ class Simulation(object):
         hit_rate = round(hit_count / all_count * 100 , 1) if all_count !=0 else 0
         race_hit_rate = round(race_hit_count / race_count * 100 , 1) if race_count !=0 else 0
         vote_check = "1" if sum_return - max_return > all_count * 100 else "0"
-        sr = pd.Series(data=[cond_text, all_count, hit_count, race_count, avg, hit_rate, race_hit_rate, avg_return, std_return, max_return, all_count * 100 , sum_return, vote_check]
-                       , index=["条件", "件数", "的中数", "レース数", "回収率", "的中率", "R的中率", "払戻平均", "払戻偏差", "最大払戻", "購入総額", "払戻総額", "購入基準"])
+        return_value = sum_return - all_count * 100
+        sr = pd.Series(data=[cond_text, all_count, hit_count, race_count, avg, hit_rate, race_hit_rate, avg_return, std_return, max_return, all_count * 100 , sum_return, vote_check, return_value]
+                       , index=["条件", "件数", "的中数", "レース数", "回収率", "的中率", "R的中率", "払戻平均", "払戻偏差", "最大払戻", "購入総額", "払戻総額", "購入基準", "収支"])
         return sr.fillna(0)

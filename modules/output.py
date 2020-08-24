@@ -443,6 +443,7 @@ class Output(object):
             print(sanrenpuku_target_bet_df.shape)
         target_bet_df = pd.concat([tansho_target_bet_df, fukusho_target_bet_df, umaren_target_bet_df, umatan_target_bet_df, wide_target_bet_df, sanrenpuku_target_bet_df])
         target_bet_df = target_bet_df.sort_values(["RACE_ID", "エリア", "券種", "購入金額", "目１", "目２", "目３"])
+        target_bet_df = target_bet_df.drop_duplicates(subset=["RACE_ID", "券種", "目１", "目２", "目３"])
         target_bet_df.to_csv(self.auto_bet_path + "target_bet.csv", index=False, header=False)
         self.target_bet_df = target_bet_df
 

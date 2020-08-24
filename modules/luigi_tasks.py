@@ -223,7 +223,7 @@ class Simulate_predict_data(luigi.Task):
             monthly_mark_base_summary_df = self.skproc.calc_monthly_tanpuku_df(mark_base_df, result_df)
             print(monthly_mark_base_summary_df.sort_values("条件"))
 
-            sim_df = self.skproc.simulate_mark_rate(mark_base_df, result_df)
+            sim_df = self.skproc.simulate_mark_rate(mark_base_df, result_df, 30)
             print(sim_df)
             target_sr = sim_df.iloc[0]
             print("-------- Mark設定条件 ---------------")

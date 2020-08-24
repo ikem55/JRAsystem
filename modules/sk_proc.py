@@ -667,25 +667,36 @@ class SkProc(object):
                 summary_df = summary_df.append(temp_sr, ignore_index=True)
         return summary_df
 
-    def simulate_mark_rate(self, mark_base_df, result_df):
-        win_range = [30, 35, 40, 45]
-        jiku_range = [30, 35, 40, 45, 50]
-        ana_range = [15, 20, 25, 30]
+
+    def calc_rank_mark_df(self, mark_df ,result_df):
+        summary_df = pd.DataFrame()
+        temp_mark_df = pd.merge(mark_df, result_df, on=["RACE_KEY", "UMABAN"])
+        for rank in [1,2,3,4,5]:
+            temp_df = temp_mark_df.query(f"RANK == {rank}").copy()
+            cond_text = f"RANK == {rank}"
+            temp_sr = self._calc_tanpuku_summary(temp_df, cond_text)
+            summary_df = summary_df.append(temp_sr, ignore_index=True)
+        return summary_df
+
+    def simulate_mark_rate(self, mark_base_df, result_df, fukusho_base):
+        win_range = [35, 40, 45, 50]
+        jiku_range = [35, 40, 45, 50]
+        ana_range = [10, 15, 20, 25, 30]
         mark_base_df = pd.merge(mark_base_df, result_df, on=["RACE_KEY", "UMABAN"])
         summary_df = pd.DataFrame()
         for win in win_range:
             for jiku in jiku_range:
                 for ana in ana_range:
                     if win + jiku + ana == 100:
-                        cond = f"WIN:{win}% JIKU:{jiku}% ANA:{ana}% and RANK == 1"
+                        cond = f"WIN:{win}% JIKU:{jiku}% ANA:{ana}% and RANK <= 3"
                         mark_df = self.create_mark_df(mark_base_df, win, jiku, ana)
-                        mark_df = mark_df.query("RANK == 1")
+                        mark_df = mark_df.query("RANK <= 3")
                         temp_sr = self._calc_tanpuku_summary(mark_df, cond)
                         temp_sr["win_rate"] = win
                         temp_sr["jiku_rate"] = jiku
                         temp_sr["ana_rate"] = ana
                         summary_df = summary_df.append(temp_sr, ignore_index=True)
-        summary_df = summary_df.sort_values("複勝回収率", ascending=False).reset_index()
+        summary_df = summary_df.query(f"複勝的中率 >= {fukusho_base}").sort_values("複勝回収率", ascending=False).reset_index()
         return summary_df
 
 
